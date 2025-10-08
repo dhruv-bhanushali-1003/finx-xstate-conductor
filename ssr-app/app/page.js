@@ -1,3 +1,5 @@
+"use client"
+
 // src/App.js
 import React from "react";
 import { useState } from "react";
@@ -10,7 +12,7 @@ import { useForm } from "react-hook-form";
 const ConductorService = {
   async startWorkflow(workflowName = "loan-application-simple-2") {
     try {
-      const res = await axios.post(`/api/workflow`, { name: workflowName });
+      const res = await axios.post(`/api/proxy/workflow`, { name: workflowName });
       return { workflowId: res.data };
     } catch (err) {
       console.error("startWorkflow error:", err);
@@ -20,7 +22,7 @@ const ConductorService = {
 
   async getWorkflowStatus(workflowId) {
     try {
-      const res = await axios.get(`/api/workflow/${workflowId}`);
+      const res = await axios.get(`/api/proxy/workflow/${workflowId}`);
       return res.data;
     } catch (err) {
       console.error("getWorkflowStatus error:", err);
@@ -32,7 +34,7 @@ const ConductorService = {
     try {
       console.log("Polling for task:", taskType);
       const res = await axios.get(
-        `/api/tasks/poll/${taskType}?workerid=${workerId}`
+        `/api/proxy/tasks/poll/${taskType}?workerid=${workerId}`
       );
       if (!res.data || !res.data.taskType) return null;
       return res.data;
@@ -45,7 +47,7 @@ const ConductorService = {
   async completeTask(workflowInstanceId, taskId, outputData) {
     try {
       console.log("Completing task:", taskId, "with data:", outputData);
-      const res = await axios.post(`/api/tasks`, {
+      const res = await axios.post(`/api/proxy/tasks`, {
         taskId,
         workflowInstanceId,
         status: "COMPLETED",
@@ -61,7 +63,7 @@ const ConductorService = {
   async searchWorkflows(workflowType) {
     try {
       const res = await axios.get(
-        `/api/workflow/search?start=0&size=15&sort=startTime%3ADESC&freeText=%2A&query=workflowType%20IN%20%28${workflowType}%29`
+        `/api/proxy/workflow/search?start=0&size=15&sort=startTime%3ADESC&freeText=%2A&query=workflowType%20IN%20%28${workflowType}%29`
       );
       return res.data.results || [];
     } catch (err) {
