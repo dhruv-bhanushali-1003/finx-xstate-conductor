@@ -8,7 +8,7 @@ import { useForm } from "react-hook-form";
 
 // -------------------- Conductor Service --------------------
 const ConductorService = {
-  async startWorkflow(workflowName = "loan-application-simple") {
+  async startWorkflow(workflowName = "loan-application-simple-2") {
     try {
       const res = await axios.post(`/api/workflow`, { name: workflowName });
       return { workflowId: res.data };
@@ -72,7 +72,10 @@ export const loanMachine = setup({
         return { status: workflow.status, task: null };
       }
       const nextUiTask = workflow.tasks.find(
-        (t) => t.status === "SCHEDULED" && t.inputData?.ui_component
+        (t) =>
+          t.status === "SCHEDULED" &&
+          t.inputData?.ui_component !== "BankReviewInfoScreen" &&
+          t.inputData?.ui_component !== "BankApprovalScreen"
       );
       if (!nextUiTask) {
         console.warn("No UI task found in workflow:", input.workflowId);
@@ -417,31 +420,64 @@ function EmploymentInfoForm({ onUpdate, onSubmit }) {
           />
         </div>
 
-        {/* {watch("employmentType") === "Self-Employed" && (
-          <div className="bg-gray-50 p-4 rounded-lg border">
-            <h3 className="text-lg font-medium text-gray-800 mb-4">Business Details</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Business Type</label>
-                <input {...register("businessType")} className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Business Income</label>
-                <input {...register("businessIncome")} type="number" className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Years in Operation</label>
-                <input {...register("businessYears")} type="number" className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors" />
-              </div>
-            </div>
-          </div>
-        )} */}
-
         <button
           type="submit"
           className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors shadow-md"
         >
           Next
+        </button>
+      </form>
+    </div>
+  );
+}
+
+function AdditionalInfoForm({ onUpdate, onSubmit }) {
+  const { register, handleSubmit, watch } = useForm();
+
+  React.useEffect(() => {
+    const subscription = watch((values) => onUpdate(values));
+    return () => subscription;
+  }, [watch, onUpdate]);
+
+  return (
+    <div className="bg-white rounded-lg shadow-md p-6">
+      <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-3">
+        Additional Information for Self-Employed
+      </h2>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Business Type
+          </label>
+          <input
+            {...register("businessType")}
+            className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Annual Business Revenue
+          </label>
+          <input
+            {...register("businessRevenue")}
+            type="number"
+            className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Tax ID / Business Registration Number
+          </label>
+          <input
+            {...register("taxId")}
+            className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+          />
+        </div>
+        <button
+          type="submit"
+          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors shadow-md"
+        >
+          Submit
         </button>
       </form>
     </div>
@@ -539,6 +575,12 @@ function LoanApplication() {
             )}
             {currentTask?.inputData?.ui_component === "EmploymentInfoForm" && (
               <EmploymentInfoForm
+                onUpdate={handleUpdate}
+                onSubmit={handleSubmit}
+              />
+            )}
+            {currentTask?.inputData?.ui_component === "AdditionalInfoForm" && (
+              <AdditionalInfoForm
                 onUpdate={handleUpdate}
                 onSubmit={handleSubmit}
               />
