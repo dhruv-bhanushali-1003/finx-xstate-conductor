@@ -1,25 +1,603 @@
-import logo from './logo.svg';
-import './App.css';
+// src/App.js
+import React from "react";
+import { useState } from "react";
+import axios from "axios";
+import { setup, assign, fromPromise } from "xstate";
+import { useMachine } from "@xstate/react";
+import { useForm } from "react-hook-form";
 
-function App() {
+// -------------------- Conductor Service --------------------
+const ConductorService = {
+  async startWorkflow(workflowName = "loan-application-simple") {
+    try {
+      const res = await axios.post(`/api/workflow`, { name: workflowName });
+      return { workflowId: res.data };
+    } catch (err) {
+      console.error("startWorkflow error:", err);
+      throw err;
+    }
+  },
+
+  async getWorkflowStatus(workflowId) {
+    try {
+      const res = await axios.get(`/api/workflow/${workflowId}`);
+      return res.data;
+    } catch (err) {
+      console.error("getWorkflowStatus error:", err);
+      throw err;
+    }
+  },
+
+  async pollForTask(taskType, workerId = "loan-ui-worker") {
+    try {
+      console.log("Polling for task:", taskType);
+      const res = await axios.get(
+        `/api/tasks/poll/${taskType}?workerid=${workerId}`
+      );
+      if (!res.data || !res.data.taskType) return null;
+      return res.data;
+    } catch (err) {
+      console.error("pollForTask error:", err);
+      throw err;
+    }
+  },
+
+  async completeTask(workflowInstanceId, taskId, outputData) {
+    try {
+      console.log("Completing task:", taskId, "with data:", outputData);
+      const res = await axios.post(`/api/tasks`, {
+        taskId,
+        workflowInstanceId,
+        status: "COMPLETED",
+        outputData,
+      });
+      return res.data;
+    } catch (err) {
+      console.error("completeTask error:", err);
+      throw err;
+    }
+  },
+};
+
+// -------------------- XState Machine Definition --------------------
+export const loanMachine = setup({
+  actors: {
+    startWorkflow: fromPromise(() => ConductorService.startWorkflow()),
+
+    pollNextUiTask: fromPromise(async ({ input }) => {
+      const workflow = await ConductorService.getWorkflowStatus(
+        input.workflowId
+      );
+      if (workflow.status !== "RUNNING") {
+        return { status: workflow.status, task: null };
+      }
+      const nextUiTask = workflow.tasks.find(
+        (t) => t.status === "SCHEDULED" && t.inputData?.ui_component
+      );
+      if (!nextUiTask) {
+        console.warn("No UI task found in workflow:", input.workflowId);
+        return { status: workflow.status, task: null };
+      }
+      const polled = await ConductorService.pollForTask(nextUiTask.taskDefName);
+      if (!polled?.inputData?.ui_component) {
+        console.warn("Polled task is not UI:", polled?.taskDefName);
+        return { status: workflow.status, task: null };
+      }
+      return polled;
+    }),
+
+    validate: fromPromise(({ input }) => {
+      const data = input.formData || {};
+      const missing = Object.entries(data).filter(([_, v]) => !v);
+      if (missing.length) throw new Error("Please fill all fields.");
+      return true;
+    }),
+
+    submitTask: fromPromise(({ input }) => {
+      if (!input.currentTask) throw new Error("No task to submit");
+      return ConductorService.completeTask(
+        input.workflowId,
+        input.currentTask.taskId,
+        {
+          formData: input.formData,
+        }
+      );
+    }),
+  },
+}).createMachine({
+  id: "loanApp",
+  initial: "idle",
+  context: {
+    workflowId: null,
+    currentTask: null,
+    formData: {},
+    error: null,
+  },
+  states: {
+    idle: {
+      on: { START: "starting" },
+    },
+
+    starting: {
+      invoke: {
+        src: "startWorkflow",
+        onDone: {
+          target: "polling",
+          actions: assign({
+            workflowId: ({ event }) => event.output.workflowId,
+          }),
+        },
+        onError: {
+          target: "error",
+          actions: assign({
+            error: ({ event }) => event.error,
+          }),
+        },
+      },
+    },
+
+    polling: {
+      invoke: {
+        src: "pollNextUiTask",
+        input: ({ context }) => ({ workflowId: context.workflowId }),
+        onDone: [
+          {
+            guard: ({ event }) => {
+              console.log("Polled event:", event);
+              return event.output.task !== null;
+            },
+            target: "rendering",
+            actions: assign({
+              currentTask: ({ event }) => event.output,
+            }),
+          },
+          {
+            guard: ({ event }) => event.output.status === "COMPLETED",
+            target: "completed",
+          },
+          {
+            guard: ({ event }) =>
+              ["FAILED", "TERMINATED", "TIMED_OUT"].includes(
+                event.output.status
+              ),
+            target: "error",
+            actions: assign({
+              error: ({ event }) =>
+                `Workflow ended with status: ${event.output.status}`,
+            }),
+          },
+          {
+            target: "waitForPoll", // fallback if workflow is still running but no task yet
+          },
+        ],
+        onError: {
+          target: "error",
+          actions: assign({
+            error: ({ event }) => event.error,
+          }),
+        },
+      },
+    },
+
+    waitForPoll: {
+      after: {
+        30000: "polling",
+      },
+    },
+
+    rendering: {
+      on: {
+        FORM_UPDATE: {
+          actions: assign({
+            formData: ({ context, event }) => ({
+              ...context.formData,
+              ...(event.data || event),
+            }),
+          }),
+        },
+        FORM_SUBMIT: "validating",
+      },
+    },
+
+    validating: {
+      invoke: {
+        src: "validate",
+        input: ({ context }) => context,
+        onDone: "submitting",
+        onError: {
+          target: "rendering",
+          actions: assign({
+            error: ({ event }) => event.error,
+          }),
+        },
+      },
+    },
+
+    submitting: {
+      invoke: {
+        src: "submitTask",
+        input: ({ context }) => context,
+        onDone: "polling",
+        onError: {
+          target: "error",
+          actions: assign({
+            error: ({ event }) => event.error,
+          }),
+        },
+      },
+    },
+
+    completed: {
+      type: "final",
+    },
+
+    error: {
+      on: {
+        RETRY: "polling",
+      },
+    },
+  },
+});
+
+// -------------------- Forms --------------------
+function PersonalInfoForm({ onUpdate, onSubmit }) {
+  const { register, handleSubmit, watch } = useForm();
+  const [agreed, setAgreed] = useState(false);
+
+  React.useEffect(() => {
+    const subscription = watch((values) => onUpdate(values));
+    return () => subscription; // React Hook Form v7+ does not need unsubscribe
+  }, [watch, onUpdate]);
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
+    <div className="bg-white rounded-lg shadow-md p-6">
+      <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-3">
+        Personal Information
+      </h2>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Full Name
+          </label>
+          <input
+            {...register("fullName")}
+            className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Email
+          </label>
+          <input
+            {...register("email")}
+            type="email"
+            className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Phone
+          </label>
+          <input
+            {...register("phone")}
+            className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Loan Amount
+          </label>
+          <input
+            {...register("loanAmount")}
+            className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+          />
+        </div>
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+          <p className="text-sm text-gray-600 mb-3">
+            <strong>Disclaimer:</strong> By proceeding, you confirm that the
+            information provided above is true and accurate to the best of your
+            knowledge. Any false or misleading details may affect your loan
+            application process.
+          </p>
+          <label className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              checked={agreed}
+              onChange={() => setAgreed(!agreed)}
+              className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+            />
+            <span className="text-sm text-gray-700">
+              I have read and agree to the above disclaimer.
+            </span>
+          </label>
+        </div>
+        <button
+          type="submit"
+          disabled={!agreed}
+          className={`w-full font-semibold py-3 px-6 rounded-lg transition-colors shadow-md ${
+            agreed
+              ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+              : "bg-gray-300 text-gray-500 cursor-not-allowed"
+          }`}
         >
-          Learn React
-        </a>
-      </header>
+          Next
+        </button>
+      </form>
     </div>
   );
 }
 
-export default App;
+function FinancialInfoForm({ onUpdate, onSubmit }) {
+  const { register, handleSubmit, watch } = useForm();
+
+  React.useEffect(() => {
+    const subscription = watch((values) => onUpdate(values));
+    return () => subscription;
+  }, [watch, onUpdate]);
+
+  return (
+    <div className="bg-white rounded-lg shadow-md p-6">
+      <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-3">
+        Financial Information
+      </h2>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Monthly Income
+          </label>
+          <input
+            {...register("income")}
+            className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Existing Loans
+          </label>
+          <input
+            {...register("existingLoan")}
+            type="number"
+            className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+          />
+        </div>
+        <button
+          type="submit"
+          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors shadow-md"
+        >
+          Next
+        </button>
+      </form>
+    </div>
+  );
+}
+
+function EmploymentInfoForm({ onUpdate, onSubmit }) {
+  const { register, handleSubmit, watch } = useForm();
+
+  React.useEffect(() => {
+    const subscription = watch((values) => onUpdate(values));
+    return () => subscription;
+  }, [watch, onUpdate]);
+
+  return (
+    <div className="bg-white rounded-lg shadow-md p-6">
+      <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-3">
+        Employment Information
+      </h2>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Employment Type
+          </label>
+          <select
+            {...register("employmentType")}
+            className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+          >
+            <option value="Salaried">Salaried</option>
+            <option value="Self-Employed">Self-Employed</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Employer / Business Name
+          </label>
+          <input
+            {...register("employerName")}
+            className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Years of Experience
+          </label>
+          <input
+            {...register("experience")}
+            type="number"
+            className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+          />
+        </div>
+
+        {/* {watch("employmentType") === "Self-Employed" && (
+          <div className="bg-gray-50 p-4 rounded-lg border">
+            <h3 className="text-lg font-medium text-gray-800 mb-4">Business Details</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Business Type</label>
+                <input {...register("businessType")} className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Business Income</label>
+                <input {...register("businessIncome")} type="number" className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Years in Operation</label>
+                <input {...register("businessYears")} type="number" className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors" />
+              </div>
+            </div>
+          </div>
+        )} */}
+
+        <button
+          type="submit"
+          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors shadow-md"
+        >
+          Next
+        </button>
+      </form>
+    </div>
+  );
+}
+
+function ReviewComponent({ formData, onSubmit }) {
+  return (
+    <div className="bg-white rounded-lg shadow-md p-6">
+      <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-3">
+        Review & Submit
+      </h2>
+      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
+        <h3 className="text-lg font-medium text-gray-800 mb-3">
+          Application Summary
+        </h3>
+        <pre className="text-sm text-gray-600 whitespace-pre-wrap">
+          {JSON.stringify(formData, null, 2)}
+        </pre>
+      </div>
+      <button
+        onClick={onSubmit}
+        className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors shadow-md"
+      >
+        Submit Application
+      </button>
+    </div>
+  );
+}
+
+// -------------------- Main App --------------------
+function LoanApplication() {
+  const [state, send] = useMachine(loanMachine);
+  const { currentTask, formData, error } = state.context;
+  React.useEffect(() => {
+    send({ type: "START" });
+  }, [send]);
+
+  const handleUpdate = (data) => send({ type: "FORM_UPDATE", data });
+  const handleSubmit = (data) => {
+    console.log("Submitting data:", data);
+    send({ type: "FORM_UPDATE", data });
+    send({ type: "FORM_SUBMIT" });
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8">
+      <div className="max-w-4xl mx-auto px-4">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-gray-800 mb-2">FinX Bank</h1>
+          <p className="text-xl text-gray-600">Customer Loan Application</p>
+        </div>
+
+        {state.matches("starting") && (
+          <div className="bg-white rounded-lg shadow-md p-8 text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Starting workflow...</p>
+          </div>
+        )}
+        {state.matches("polling") && (
+          <div className="bg-white rounded-lg shadow-md p-8 text-center">
+            <div className="animate-pulse h-4 bg-gray-200 rounded mb-4"></div>
+            <p className="text-gray-600">Waiting for next UI task...</p>
+          </div>
+        )}
+        {state.matches("waitForPoll") && (
+          <div className="p-6 bg-green-50 border border-green-200 rounded-lg text-center">
+            <div className="text-green-600 text-4xl mb-4">✅</div>
+            <h2 className="text-2xl font-bold text-green-800 mb-2">
+              Thank You for Your Application!
+            </h2>
+            <p className="text-green-700 mb-4">
+              We have received your loan application and it is now being
+              processed.
+            </p>
+            <p className="text-green-600">
+              We will get back to you soon with an update on your application
+              status.
+            </p>
+          </div>
+        )}
+        {state.matches("rendering") && (
+          <>
+            {currentTask?.inputData?.ui_component === "PersonalInfoForm" && (
+              <PersonalInfoForm
+                onUpdate={handleUpdate}
+                onSubmit={handleSubmit}
+              />
+            )}
+            {currentTask?.inputData?.ui_component === "FinancialInfoForm" && (
+              <FinancialInfoForm
+                onUpdate={handleUpdate}
+                onSubmit={handleSubmit}
+              />
+            )}
+            {currentTask?.inputData?.ui_component === "EmploymentInfoForm" && (
+              <EmploymentInfoForm
+                onUpdate={handleUpdate}
+                onSubmit={handleSubmit}
+              />
+            )}
+            {currentTask?.inputData?.ui_component === "ReviewSubmitScreen" && (
+              <ReviewComponent formData={formData} onSubmit={handleSubmit} />
+            )}
+          </>
+        )}
+
+        {state.matches("validating") && (
+          <div className="bg-white rounded-lg shadow-md p-8 text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Validating...</p>
+          </div>
+        )}
+        {state.matches("submitting") && (
+          <div className="bg-white rounded-lg shadow-md p-8 text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Submitting task...</p>
+          </div>
+        )}
+        {state.matches("completed") && (
+          <div className="p-6 bg-green-50 border border-green-200 rounded-lg text-center">
+            <div className="text-green-600 text-4xl mb-4">✅</div>
+            <h2 className="text-2xl font-bold text-green-800 mb-2">
+              Thank You for Your Application!
+            </h2>
+            <p className="text-green-700 mb-4">
+              We have received your loan application and it is now being
+              processed.
+            </p>
+            <p className="text-green-600">
+              We will get back to you within 2-3 business days with an update on
+              your application status.
+            </p>
+          </div>
+        )}
+
+        {state.matches("error") && (
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="flex items-center mb-3">
+                <div className="text-red-500 text-xl mr-2">⚠️</div>
+                <h3 className="text-lg font-semibold text-red-800">Error</h3>
+              </div>
+              <p className="text-red-700 mb-4">{String(error)}</p>
+              <button
+                onClick={() => send({ type: "RETRY" })}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
+              >
+                Retry
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default LoanApplication;
