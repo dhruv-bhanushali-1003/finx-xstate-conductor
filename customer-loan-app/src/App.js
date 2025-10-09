@@ -184,7 +184,7 @@ export const loanMachine = setup({
 
     waitForPoll: {
       after: {
-        30000: "polling",
+        10000: "polling",
       },
     },
 
@@ -614,7 +614,7 @@ function LoanApplication() {
               processed.
             </p>
             <p className="text-green-600">
-              We will get back to you within 2-3 business days with an update on
+              We will get back to you soon with an update on
               your application status.
             </p>
           </div>
