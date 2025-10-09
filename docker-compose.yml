@@ -1,0 +1,16 @@
+services:
+  backend:
+    build: ./ssr-app
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+
+  frontend:
+    build: ./customer-loan-app
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+    depends_on:
+      - backend
