@@ -339,7 +339,7 @@ function TaskQueueView({ taskQueue, onProcessNext, onRefresh }) {
                       <p><strong>Customer:</strong> {task.customerData.fullName || 'N/A'}</p>
                       <p><strong>Email:</strong> {task.customerData.email || 'N/A'}</p>
                       <p><strong>Phone:</strong> {task.customerData.phone || 'N/A'}</p>
-                      <p><strong>Loan Amount:</strong> ${task.customerData.loanAmount || 'N/A'}</p>     
+                      <p><strong>Loan Amount:</strong> {task.customerData.loanAmount || 'N/A'}</p>     
                     </div>
                   </div>
                   <div className="ml-4">
