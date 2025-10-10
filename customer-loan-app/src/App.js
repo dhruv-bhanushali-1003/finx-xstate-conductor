@@ -417,9 +417,10 @@ function TermsAndConditionsForm({ onUpdate, onSubmit }) {
   );
 }
 
-function PersonalInfoForm({ onUpdate, onSubmit }) {
+function PersonalInfoForm({ onUpdate, onSubmit, formData }) {
   const { register, handleSubmit, watch } = useForm();
   const [agreed, setAgreed] = useState(false);
+  const isFinx = formData?.selectedBank === "Finx";
 
   React.useEffect(() => {
     const subscription = watch((values) => onUpdate(values));
@@ -469,30 +470,32 @@ function PersonalInfoForm({ onUpdate, onSubmit }) {
             className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
           />
         </div>
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-          <p className="text-sm text-gray-600 mb-3">
-            <strong>Disclaimer:</strong> By proceeding, you confirm that the
-            information provided above is true and accurate to the best of your
-            knowledge. Any false or misleading details may affect your loan
-            application process.
-          </p>
-          <label className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              checked={agreed}
-              onChange={() => setAgreed(!agreed)}
-              className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-            />
-            <span className="text-sm text-gray-700">
-              I have read and agree to the above disclaimer.
-            </span>
-          </label>
-        </div>
+        {isFinx && (
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+            <p className="text-sm text-gray-600 mb-3">
+              <strong>Disclaimer:</strong> By proceeding, you confirm that the
+              information provided above is true and accurate to the best of your
+              knowledge. Any false or misleading details may affect your loan
+              application process.
+            </p>
+            <label className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                checked={agreed}
+                onChange={() => setAgreed(!agreed)}
+                className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+              />
+              <span className="text-sm text-gray-700">
+                I have read and agree to the above disclaimer.
+              </span>
+            </label>
+          </div>
+        )}
         <button
           type="submit"
-          disabled={!agreed}
+          disabled={isFinx && !agreed}
           className={`w-full font-semibold py-3 px-6 rounded-lg transition-colors shadow-md ${
-            agreed
+            (!isFinx || agreed)
               ? "bg-indigo-600 hover:bg-indigo-700 text-white"
               : "bg-gray-300 text-gray-500 cursor-not-allowed"
           }`}
@@ -754,6 +757,7 @@ function LoanApplication() {
               <PersonalInfoForm
                 onUpdate={handleUpdate}
                 onSubmit={handleSubmit}
+                formData={formData}
               />
             )}
             {currentTask?.inputData?.ui_component === "FinancialInfoForm" && (
