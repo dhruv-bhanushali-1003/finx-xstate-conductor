@@ -10,7 +10,7 @@ import { useForm } from "react-hook-form";
 
 // -------------------- Conductor Service --------------------
 const ConductorService = {
-  async startWorkflow(workflowName = "loan-application-simple-2") {
+  async startWorkflow(workflowName = "loan-application-process-using-xstate") {
     try {
       const res = await axios.post(`/api/proxy/workflow`, { name: workflowName });
       return { workflowId: res.data };
@@ -71,15 +71,55 @@ const ConductorService = {
       return [];
     }
   },
+
+  async getAllPendingTasks() {
+    try {
+      const workflows = await this.searchWorkflows("loan-application-process-using-xstate");
+      const pendingTasks = [];
+
+      for (const workflow of workflows) {
+        if (workflow.status === "RUNNING") {
+          const workflowDetails = await this.getWorkflowStatus(workflow.workflowId);
+          const uiTasks = workflowDetails.tasks.filter(
+            (t) =>
+              t.status === "SCHEDULED" &&
+              (t.inputData?.ui_component === "BankReviewInfoScreen" ||
+                t.inputData?.ui_component === "BankApprovalScreen")
+          );
+          
+          uiTasks.forEach(task => {
+            pendingTasks.push({
+              workflowId: workflow.workflowId,
+              taskId: task.taskId,
+              taskType: task.taskDefName,
+              uiComponent: task.inputData?.ui_component,
+              customerData: task.inputData?.data || task.inputData?.additionalData || task.inputData?.initialData || {},
+              createdTime: workflow.createTime,
+              status: task.status
+            });
+          });
+        }
+      }
+      
+      return pendingTasks.sort((a, b) => new Date(a.createdTime) - new Date(b.createdTime));
+    } catch (err) {
+      console.error("getAllPendingTasks error:", err);
+      return [];
+    }
+  },
 };
 
 // -------------------- XState Machine Definition --------------------
 export const loanMachine = setup({
   actors: {
+    loadTaskQueue: fromPromise(async () => {
+      return await ConductorService.getAllPendingTasks();
+    }),
+
     pollNextUiTask: fromPromise(async () => {
       // Search for loan workflows
       const workflows = await ConductorService.searchWorkflows(
-        "loan-application-simple-2"
+        "loan-application-process-using-xstate"
       );
 
       for (const workflow of workflows) {
@@ -128,14 +168,40 @@ export const loanMachine = setup({
   },
 }).createMachine({
   id: "loanApp",
-  initial: "polling",
+  initial: "loadingQueue",
   context: {
     workflowId: null,
     currentTask: null,
     formData: {},
     error: null,
+    taskQueue: [],
   },
   states: {
+    loadingQueue: {
+      invoke: {
+        src: "loadTaskQueue",
+        onDone: {
+          target: "queueView",
+          actions: assign({
+            taskQueue: ({ event }) => event.output,
+          }),
+        },
+        onError: {
+          target: "error",
+          actions: assign({
+            error: ({ event }) => event.error,
+          }),
+        },
+      },
+    },
+
+    queueView: {
+      on: {
+        PROCESS_NEXT: "polling",
+        REFRESH_QUEUE: "loadingQueue",
+      },
+    },
+
     polling: {
       invoke: {
         src: "pollNextUiTask",
@@ -216,7 +282,7 @@ export const loanMachine = setup({
 
     taskCompleted: {
       after: {
-        3000: "polling",
+        3000: "loadingQueue",
       },
     },
 
@@ -228,7 +294,77 @@ export const loanMachine = setup({
   },
 });
 
-// -------------------- Forms --------------------
+// -------------------- Components --------------------
+
+function TaskQueueView({ taskQueue, onProcessNext, onRefresh }) {
+  return (
+    <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="flex justify-between items-center mb-6 border-b pb-3">
+        <h2 className="text-2xl font-bold text-gray-800">Task Queue</h2>
+        <button
+          onClick={onRefresh}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+        >
+          Refresh
+        </button>
+      </div>
+      
+      {taskQueue.length === 0 ? (
+        <div className="text-center py-8">
+          <div className="text-gray-400 text-4xl mb-4">📋</div>
+          <p className="text-gray-600">No pending tasks</p>
+        </div>
+      ) : (
+        <>
+          <div className="mb-4">
+            <p className="text-sm text-gray-600">
+              {taskQueue.length} task{taskQueue.length !== 1 ? 's' : ''} pending
+            </p>
+          </div>
+          
+          <div className="space-y-3 mb-6">
+            {taskQueue.map((task, index) => (
+              <div key={task.taskId} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
+                        #{index + 1}
+                      </span>
+                      <span className="font-medium text-gray-900">
+                        {task.uiComponent === 'BankReviewInfoScreen' ? 'Review Application' : 'Approval Decision'}
+                      </span>
+                    </div>
+                    <div className="text-sm text-gray-600 space-y-1">
+                      <p><strong>Customer:</strong> {task.customerData.fullName || 'N/A'}</p>
+                      <p><strong>Email:</strong> {task.customerData.email || 'N/A'}</p>
+                      <p><strong>Phone:</strong> {task.customerData.phone || 'N/A'}</p>
+                      <p><strong>Loan Amount:</strong> ${task.customerData.loanAmount || 'N/A'}</p>     
+                    </div>
+                  </div>
+                  <div className="ml-4">
+                    <span className={`px-2 py-1 text-xs rounded ${
+                      task.status === 'SCHEDULED' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800'
+                    }`}>
+                      {task.status}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          <button
+            onClick={onProcessNext}
+            className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors shadow-md"
+          >
+            Process Next Task
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
 
 function BankReviewInfoScreen({ currentTask, onSubmit }) {
   const applicationData = currentTask?.inputData || {};
@@ -308,7 +444,7 @@ function BankApprovalScreen({ currentTask, onSubmit }) {
 // -------------------- Main App --------------------
 function LoanApplication() {
   const [state, send] = useMachine(loanMachine);
-  const { currentTask, formData, error } = state.context;
+  const { currentTask, formData, error, taskQueue } = state.context;
   // No need to start workflow - connecting to existing one
 
   const handleUpdate = (data) => send({ type: "FORM_UPDATE", data });
@@ -317,6 +453,9 @@ function LoanApplication() {
     send({ type: "FORM_UPDATE", data });
     send({ type: "FORM_SUBMIT" });
   };
+  
+  const handleProcessNext = () => send({ type: "PROCESS_NEXT" });
+  const handleRefreshQueue = () => send({ type: "REFRESH_QUEUE" });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8">
@@ -325,6 +464,21 @@ function LoanApplication() {
           <h1 className="text-4xl font-bold text-gray-800 mb-2">FinX Bank</h1>
           <p className="text-xl text-gray-600">Loan Officer Application</p>
         </div>
+
+        {state.matches("loadingQueue") && (
+          <div className="bg-white rounded-lg shadow-md p-8 text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading task queue...</p>
+          </div>
+        )}
+        
+        {state.matches("queueView") && (
+          <TaskQueueView
+            taskQueue={taskQueue}
+            onProcessNext={handleProcessNext}
+            onRefresh={handleRefreshQueue}
+          />
+        )}
 
         {state.matches("polling") && (
           <div className="bg-white rounded-lg shadow-md p-8 text-center">
