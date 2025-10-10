@@ -1,6 +1,6 @@
 // src/App.js
 import React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 import { setup, assign, fromPromise } from "xstate";
 import { useMachine } from "@xstate/react";
@@ -14,6 +14,16 @@ const ConductorService = {
       return { workflowId: res.data };
     } catch (err) {
       console.error("startWorkflow error:", err);
+      throw err;
+    }
+  },
+
+  async getApplicationByUUID(uuid) {
+    try {
+      const res = await axios.get(`/api/application/${uuid}`);
+      return res.data;
+    } catch (err) {
+      console.error("getApplicationByUUID error:", err);
       throw err;
     }
   },
@@ -91,7 +101,9 @@ export const loanMachine = setup({
 
     validate: fromPromise(({ input }) => {
       const data = input.formData || {};
-      const missing = Object.entries(data).filter(([_, v]) => !v);
+      const missing = Object.entries(data).filter(
+        ([_, v]) => v === null || v === undefined || v === ""
+      );
       if (missing.length) throw new Error("Please fill all fields.");
       return true;
     }),
@@ -118,7 +130,17 @@ export const loanMachine = setup({
   },
   states: {
     idle: {
-      on: { START: "starting" },
+      on: { 
+        START: [
+          {
+            guard: ({ context }) => context.workflowId,
+            target: "polling"
+          },
+          {
+            target: "starting"
+          }
+        ]
+      },
     },
 
     starting: {
@@ -192,10 +214,16 @@ export const loanMachine = setup({
       on: {
         FORM_UPDATE: {
           actions: assign({
-            formData: ({ context, event }) => ({
-              ...context.formData,
-              ...(event.data || event),
-            }),
+            workflowId: ({ context, event }) => 
+              (event.data || event).workflowId || context.workflowId,
+            formData: ({ context, event }) => {
+              const data = event.data || event;
+              const { workflowId, ...formData } = data;
+              return {
+                ...context.formData,
+                ...formData,
+              };
+            },
           }),
         },
         FORM_SUBMIT: "validating",
@@ -689,9 +717,34 @@ function ReviewComponent({ formData, onSubmit }) {
 function LoanApplication() {
   const [state, send] = useMachine(loanMachine);
   const { currentTask, formData, error } = state.context;
-  React.useEffect(() => {
-    send({ type: "START" });
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const uuid = urlParams.get('uuid');
+    
+    if (uuid) {
+      loadExistingApplication(uuid);
+    } else {
+      send({ type: "START" });
+    }
   }, [send]);
+
+  const loadExistingApplication = async (uuid) => {
+    try {
+      const applicationData = await ConductorService.getApplicationByUUID(uuid);
+      send({ 
+        type: "FORM_UPDATE", 
+        data: { 
+          ...applicationData.formData, 
+          workflowId: applicationData.workflowId 
+        }
+      });
+      send({ type: "START" });
+    } catch (error) {
+      console.error('Failed to load application:', error);
+      send({ type: "START" });
+    }
+  };
 
   const handleUpdate = (data) => send({ type: "FORM_UPDATE", data });
   const handleSubmit = (data) => {
