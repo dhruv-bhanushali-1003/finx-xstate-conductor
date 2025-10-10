@@ -20,7 +20,9 @@ const ConductorService = {
 
   async getApplicationByUUID(uuid) {
     try {
-      const res = await axios.get(`/api/application/${uuid}`);
+      console.log(uuid)
+      const res = await axios.get(`http://3.111.211.115:8082/api/application-data/${uuid}`);
+      console.log(res.data)
       return res.data;
     } catch (err) {
       console.error("getApplicationByUUID error:", err);
@@ -96,6 +98,7 @@ export const loanMachine = setup({
         console.warn("Polled task is not UI:", polled?.taskDefName);
         return { status: workflow.status, task: null };
       }
+      console.log("Current UI task:", polled?.inputData?.ui_component);
       return polled;
     }),
 
@@ -131,9 +134,23 @@ export const loanMachine = setup({
   states: {
     idle: {
       on: { 
+        FORM_UPDATE: {
+          actions: assign({
+            workflowId: ({ context, event }) => 
+              (event.data || event).workflowId || context.workflowId,
+            formData: ({ context, event }) => ({
+              ...context.formData,
+              ...(event.data || event),
+            }),
+          }),
+        },
         START: [
           {
-            guard: ({ context }) => context.workflowId,
+            guard: ({ context }) => {
+              console.log("Guard check - context.workflowId:", context.workflowId);
+              console.log("Guard check - context.formData.workflowId:", context.formData?.workflowId);
+              return context.workflowId;
+            },
             target: "polling"
           },
           {
@@ -150,6 +167,10 @@ export const loanMachine = setup({
           target: "polling",
           actions: assign({
             workflowId: ({ event }) => event.output.workflowId,
+            formData: ({ context, event }) => ({
+              ...context.formData,
+              workflowId: event.output.workflowId,
+            }),
           }),
         },
         onError: {
@@ -216,14 +237,10 @@ export const loanMachine = setup({
           actions: assign({
             workflowId: ({ context, event }) => 
               (event.data || event).workflowId || context.workflowId,
-            formData: ({ context, event }) => {
-              const data = event.data || event;
-              const { workflowId, ...formData } = data;
-              return {
-                ...context.formData,
-                ...formData,
-              };
-            },
+            formData: ({ context, event }) => ({
+              ...context.formData,
+              ...(event.data || event),
+            }),
           }),
         },
         FORM_SUBMIT: "validating",
@@ -318,7 +335,7 @@ function BankSelectionForm({ onUpdate, onSubmit }) {
                 className="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
               />
               <div className="ml-3">
-                <div className="text-lg font-medium text-gray-900">Fincuro</div>
+                <div className="text-lg font-medium text-gray-900">Fincuro Bank</div>
                 <div className="text-sm text-gray-500">Flexible terms and personalized service</div>
               </div>
             </label>
@@ -723,6 +740,7 @@ function LoanApplication() {
     const uuid = urlParams.get('uuid');
     
     if (uuid) {
+      console.log("Loading existing application with UUID:", uuid);
       loadExistingApplication(uuid);
     } else {
       send({ type: "START" });
@@ -732,14 +750,19 @@ function LoanApplication() {
   const loadExistingApplication = async (uuid) => {
     try {
       const applicationData = await ConductorService.getApplicationByUUID(uuid);
+      console.log("Loaded application data:", applicationData);
+      
+      // First update the context with existing data
       send({ 
         type: "FORM_UPDATE", 
-        data: { 
-          ...applicationData.formData, 
-          workflowId: applicationData.workflowId 
-        }
+        data: applicationData.formData
       });
-      send({ type: "START" });
+      
+      // Small delay to ensure context is updated before START
+      setTimeout(() => {
+        console.log("Starting with existing workflowId:", applicationData.formData.workflowId);
+        send({ type: "START" });
+      }, 1000);
     } catch (error) {
       console.error('Failed to load application:', error);
       send({ type: "START" });
