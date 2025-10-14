@@ -7,7 +7,10 @@ RUN npm install
 
 COPY . .
 
-ENV PORT=9000
+RUN npm run build
+
+RUN npm install -g serve
+
 EXPOSE 9000
 
-CMD ["npm", "start"]
+CMD ["serve", "-s", "build", "-l", "9000"]

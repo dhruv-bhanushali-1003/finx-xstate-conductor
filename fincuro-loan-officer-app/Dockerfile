@@ -27,4 +27,4 @@ COPY --from=builder /app/next.config.js ./next.config.js
 EXPOSE 9001
 
 # Start in production
-CMD ["npm", "start", "--", "-p", "9001"]
+CMD ["npm", "start", "-p", "9001"]
