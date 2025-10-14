@@ -1,17 +1,16 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: true,
   experimental: {
-    esmExternals: false
+    appDir: true,
   },
   async rewrites() {
     return [
       {
-        source: "/api/proxy/:path*",
-        destination: "http://52.66.238.28:8127/api/:path*",
+        source: '/api/:path*',
+        destination: 'https://base-api.fincuro.in/gateway/ui-workflow/api/:path*',
       },
-    ];
+    ]
   },
-};
+}
 
-module.exports = nextConfig;
+module.exports = nextConfig

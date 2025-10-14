@@ -7,10 +7,9 @@ RUN npm install
 
 COPY . .
 
-RUN npm run build
-
-RUN npm install -g serve
-
 EXPOSE 9000
 
-CMD ["serve", "-s", "build", "-l", "9000"]
+ENV PORT=9000
+ENV HOST=0.0.0.0
+
+CMD ["npm", "start"]
