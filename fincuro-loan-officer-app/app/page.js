@@ -10,9 +10,9 @@ import { useForm } from "react-hook-form";
 
 // -------------------- Conductor Service --------------------
 const ConductorService = {
-  async startWorkflow(workflowName = "loan-application-process-using-xstate") {
+  async startWorkflow(workflowName = "Fincuro Bank loan-application-process") {
     try {
-      const res = await axios.post(`/api/proxy/workflow`, { name: workflowName });
+      const res = await axios.post(`https://base-api.fincuro.in/gateway/ui-workflow/api/workflow`, { name: workflowName });
       return { workflowId: res.data };
     } catch (err) {
       console.error("startWorkflow error:", err);
@@ -22,7 +22,7 @@ const ConductorService = {
 
   async getWorkflowStatus(workflowId) {
     try {
-      const res = await axios.get(`/api/proxy/workflow/${workflowId}`);
+      const res = await axios.get(`https://base-api.fincuro.in/gateway/ui-workflow/api/workflow/${workflowId}`);
       return res.data;
     } catch (err) {
       console.error("getWorkflowStatus error:", err);
@@ -34,7 +34,7 @@ const ConductorService = {
     try {
       console.log("Polling for task:", taskType);
       const res = await axios.get(
-        `/api/proxy/tasks/poll/${taskType}?workerid=${workerId}`
+        `https://base-api.fincuro.in/gateway/ui-workflow/api/tasks/poll/${taskType}?workerid=${workerId}`
       );
       if (!res.data || !res.data.taskType) return null;
       return res.data;
@@ -47,7 +47,7 @@ const ConductorService = {
   async completeTask(workflowInstanceId, taskId, outputData) {
     try {
       console.log("Completing task:", taskId, "with data:", outputData);
-      const res = await axios.post(`/api/proxy/tasks`, {
+      const res = await axios.post(`https://base-api.fincuro.in/gateway/ui-workflow/api/tasks`, {
         taskId,
         workflowInstanceId,
         status: "COMPLETED",
@@ -63,7 +63,7 @@ const ConductorService = {
   async searchWorkflows(workflowType) {
     try {
       const res = await axios.get(
-        `/api/proxy/workflow/search?start=0&size=15&sort=startTime%3ADESC&freeText=%2A&query=workflowType%20IN%20%28${workflowType}%29`
+        `https://base-api.fincuro.in/gateway/ui-workflow/api/workflow/search?start=0&size=15&sort=startTime%3ADESC&freeText=%2A&workflowType=${encodeURIComponent(workflowType)}`
       );
       return res.data.results || [];
     } catch (err) {
@@ -74,7 +74,7 @@ const ConductorService = {
 
   async getAllPendingTasks() {
     try {
-      const workflows = await this.searchWorkflows("loan-application-process-using-xstate");
+      const workflows = await this.searchWorkflows("Fincuro Bank loan-application-process");
       const pendingTasks = [];
 
       for (const workflow of workflows) {
@@ -119,7 +119,7 @@ export const loanMachine = setup({
     pollNextUiTask: fromPromise(async () => {
       // Search for loan workflows
       const workflows = await ConductorService.searchWorkflows(
-        "loan-application-process-using-xstate"
+        "Fincuro Bank loan-application-process"
       );
 
       for (const workflow of workflows) {
@@ -461,7 +461,7 @@ function LoanApplication() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8">
       <div className="max-w-4xl mx-auto px-4">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">FinX Bank</h1>
+          <h1 className="text-4xl font-bold text-gray-800 mb-2">Fincuro Bank</h1>
           <p className="text-xl text-gray-600">Loan Officer Application</p>
         </div>
 

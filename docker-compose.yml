@@ -1,16 +1,30 @@
 services:
-  backend:
-    build: ./ssr-app
+  finx-loan-officer:
+    build: ./finx-loan-officer-app
     ports:
       - "3001:3001"
     environment:
       - NODE_ENV=production
 
-  frontend:
-    build: ./customer-loan-app
+  finx-customer:
+    build: ./finx-customer-loan-app
     ports:
       - "3000:3000"
     environment:
       - NODE_ENV=production
     depends_on:
       - backend
+
+  fincuro-customer:
+    build: ./fincuro-customer-loan-app
+    ports:
+      - "9000:9000"
+    environment:
+      - NODE_ENV=production
+
+  fincuro-bank:
+    build: ./fincuro-loan-officer-app
+    ports:
+      - "9001:9001"
+    environment:
+      - NODE_ENV=production

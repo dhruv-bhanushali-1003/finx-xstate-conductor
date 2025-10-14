@@ -1,7 +1,7 @@
 import './globals.css'
 
 export const metadata = {
-  title: "Loan Application",
+  title: "Fincuro loan officer Application",
   description: "Loan Officer Review App",
 };
 
