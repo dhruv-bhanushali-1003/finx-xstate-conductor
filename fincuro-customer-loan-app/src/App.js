@@ -236,7 +236,7 @@ export const loanMachine = setup({
 
     waitForPoll: {
       after: {
-        5000: "polling",
+        3000: "polling",
       },
     },
 
