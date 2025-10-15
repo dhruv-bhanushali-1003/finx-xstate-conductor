@@ -390,6 +390,7 @@ function PersonalInfoForm({ onUpdate, onSubmit, formData }) {
     <div className="max-w-lg mx-auto bg-white p-6 rounded-xl shadow-md">
       <Form
         src="http://3.110.81.211/form/68ee1dd19bd3200d522395c8"
+        options={{ readOnly: false }}
         onSubmit={(submission) => {
           onUpdate(submission.data);
           onSubmit(submission.data);
