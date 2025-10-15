@@ -2,10 +2,161 @@
 @tailwind components;
 @tailwind utilities;
 
-.form-input input {
-  @apply max-w-md w-full border border-gray-300 py-2 px-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors;
+/* Form.io Container - Match the card design */
+.formio-container {
+  border: none !important;
+  outline: none !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+  background: white !important;
+  border-radius: 0.75rem !important;
+  padding: 1.5rem !important;
+  max-width: 800px !important;
+  margin: 0 auto !important;
 }
 
-.form-input label {
-  @apply block text-sm font-medium text-gray-700 mb-2;
+/* Form.io Form - Remove default styling */
+.formio-form {
+  border: none !important;
+  outline: none !important;
+}
+
+/* Form.io Components - Spacing and layout */
+.formio-form .formio-component {
+  margin-bottom: 1.5rem !important;
+  width: 100% !important;
+}
+
+/* Form.io Input Fields - Match the design width and styling */
+.formio-form .formio-component input,
+.formio-form .formio-component textarea,
+.formio-form .formio-component select {
+  width: 100% !important;
+  max-width: 100% !important;
+  height: 2.75rem !important;
+  padding: 0.75rem 1rem !important;
+  font-size: 1rem !important;
+  border-radius: 0.5rem !important;
+  border: 1px solid #d1d5db !important;
+  outline: none !important;
+  transition: all 0.2s ease-in-out !important;
+  box-sizing: border-box !important;
+}
+
+.formio-form .formio-component input:focus,
+.formio-form .formio-component textarea:focus,
+.formio-form .formio-component select:focus {
+  outline: none !important;
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+}
+
+/* Form.io Labels */
+.formio-form .formio-component label {
+  font-weight: 500 !important;
+  color: #374151 !important;
+  margin-bottom: 0.5rem !important;
+  display: block !important;
+  font-size: 0.875rem !important;
+}
+
+/* Form.io Buttons - Match the design */
+.formio-form .btn {
+  width: 100% !important;
+  height: 2.75rem !important;
+  padding: 0.75rem 1.5rem !important;
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+  border-radius: 0.5rem !important;
+  background-color: #6b7280 !important;
+  color: white !important;
+  border: none !important;
+  outline: none !important;
+  transition: all 0.2s ease-in-out !important;
+  cursor: pointer !important;
+  margin-top: 1rem !important;
+}
+
+.formio-form .btn:hover {
+  background-color: #4b5563 !important;
+}
+
+.formio-form .btn:focus {
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(107, 114, 128, 0.1) !important;
+}
+
+/* Form.io Input Wrapper - Ensure full width */
+.formio-form .formio-component .formio-input-wrapper {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* Form.io Component Container - Ensure proper width */
+.formio-form .formio-component .formio-component {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* Form.io Checkbox - Align with text on same line */
+.formio-form .formio-component input[type="checkbox"] {
+  width: auto !important;
+  height: auto !important;
+  margin-right: 0.5rem !important;
+  display: inline-block !important;
+  vertical-align: middle !important;
+}
+
+.formio-form .formio-component .formio-checkbox {
+  display: flex !important;
+  align-items: center !important;
+  flex-direction: row !important;
+}
+
+.formio-form .formio-component .formio-checkbox label {
+  display: flex !important;
+  align-items: center !important;
+  margin-bottom: 0 !important;
+  cursor: pointer !important;
+}
+
+.formio-form .formio-component .formio-checkbox .formio-checkbox-wrapper {
+  display: flex !important;
+  align-items: center !important;
+  flex-direction: row !important;
+}
+
+/* Form.io Radio buttons - Align with text on same line */
+.formio-form .formio-component input[type="radio"] {
+  width: auto !important;
+  height: auto !important;
+  margin-right: 0.5rem !important;
+  display: inline-block !important;
+  vertical-align: middle !important;
+}
+
+.formio-form .formio-component .formio-radio {
+  display: flex !important;
+  align-items: center !important;
+  flex-direction: row !important;
+}
+
+.formio-form .formio-component .formio-radio label {
+  display: flex !important;
+  align-items: center !important;
+  margin-bottom: 0 !important;
+  cursor: pointer !important;
+}
+
+/* Add border to the Choices.js rendered dropdown */
+.choices__list--single {
+  border: 1px solid #ced4da; /* Bootstrap default border color */
+  border-radius: 0.25rem;     /* Rounded like Bootstrap */
+  background-color: #fff;
+  min-height: 38px;           /* match Bootstrap input height */
+}
+
+/* Optional: focus state */
+.choices__list--single.is-focused {
+  border-color: #80bdff;
+  box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
 }

@@ -7,6 +7,9 @@ import { useMachine } from "@xstate/react";
 import { useForm } from "react-hook-form";
 import { Form } from 'react-formio';
 import 'formiojs/dist/formio.full.css';
+import { Formio } from 'formiojs';
+
+Formio.setBaseUrl('http://3.110.81.211');
 
 // -------------------- Conductor Service --------------------
 const ConductorService = {
@@ -292,6 +295,26 @@ export const loanMachine = setup({
   },
 });
 
+async function loginAndGetToken() {
+  const response = await fetch('http://3.110.81.211/user/login', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json'
+    },
+    body: JSON.stringify({
+      data: {
+        email: 'satish@fincuro.9on.in',
+        password: 'Satish@123456'
+      }
+    })
+  });
+
+  const token = response.headers.get('x-jwt-token');
+  Formio.setToken(token); 
+}
+
+
 // -------------------- Forms --------------------
 
 // Commented out original PersonalInfoForm
@@ -387,10 +410,12 @@ function PersonalInfoForm({ onUpdate, onSubmit, formData }) {
 // New PersonalInfoForm using form-io react package
 function PersonalInfoForm({ onUpdate, onSubmit, formData }) {
   return (
-    <div className="max-w-lg mx-auto bg-white p-6 rounded-xl shadow-md">
+    <div className="mx-auto bg-white p-6 rounded-xl shadow-md form-container">
       <Form
         src="http://3.110.81.211/form/68ee1dd19bd3200d522395c8"
-        options={{ readOnly: false }}
+        options={{readOnly: false,
+          noAlerts: true,
+          template: 'bootstrap3' }}
         onSubmit={(submission) => {
           onUpdate(submission.data);
           onSubmit(submission.data);
@@ -400,103 +425,36 @@ function PersonalInfoForm({ onUpdate, onSubmit, formData }) {
   );
 }
 
-function FinancialInfoForm({ onUpdate, onSubmit }) {
-  const { register, handleSubmit, watch } = useForm();
-
-  React.useEffect(() => {
-    const subscription = watch((values) => onUpdate(values));
-    return () => subscription;
-  }, [watch, onUpdate]);
-
+function FinancialInfoForm({ onUpdate, onSubmit, formData }) {
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-3">
-        Financial Information
-      </h2>
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Monthly Income
-          </label>
-          <input
-            {...register("income")}
-            className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Existing Loans
-          </label>
-          <input
-            {...register("existingLoan")}
-            type="number"
-            className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-          />
-        </div>
-        <button
-          type="submit"
-          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors shadow-md"
-        >
-          Next
-        </button>
-      </form>
+    <div className="mx-auto bg-white p-6 rounded-xl shadow-md form-container">
+      <Form
+        src="http://3.110.81.211/form/68ef53c79bd3200d5223a61e"
+        options={{readOnly: false,
+          noAlerts: true,
+          template: 'bootstrap3' }}
+        onSubmit={(submission) => {
+          onUpdate(submission.data);
+          onSubmit(submission.data);
+        }}
+      />
     </div>
   );
 }
 
 function EmploymentInfoForm({ onUpdate, onSubmit }) {
-  const { register, handleSubmit, watch } = useForm();
-
-  React.useEffect(() => {
-    const subscription = watch((values) => onUpdate(values));
-    return () => subscription;
-  }, [watch, onUpdate]);
-
-  return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-3">
-        Employment Information
-      </h2>
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Employment Type
-          </label>
-          <select
-            {...register("employmentType")}
-            className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-          >
-            <option value="Salaried">Salaried</option>
-            <option value="Self-Employed">Self-Employed</option>
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Employer / Business Name
-          </label>
-          <input
-            {...register("employerName")}
-            className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Years of Experience
-          </label>
-          <input
-            {...register("experience")}
-            type="number"
-            className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-          />
-        </div>
-
-        <button
-          type="submit"
-          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors shadow-md"
-        >
-          Next
-        </button>
-      </form>
+ return (
+    <div className="mx-auto bg-white p-6 rounded-xl shadow-md form-container">
+      <Form
+        src="http://3.110.81.211/form/68ef54809bd3200d5223a650"
+        options={{readOnly: false,
+          noAlerts: true,
+          template: 'bootstrap3' }}
+        onSubmit={(submission) => {
+          onUpdate(submission.data);
+          onSubmit(submission.data);
+        }}
+      />
     </div>
   );
 }
@@ -582,8 +540,10 @@ function ReviewComponent({ formData, onSubmit }) {
 function LoanApplication() {
   const [state, send] = useMachine(loanMachine);
   const { currentTask, formData, error } = state.context;
+  const [token, setToken] = useState(null);
 
   useEffect(() => {
+    loginAndGetToken().then(setToken);
     const urlParams = new URLSearchParams(window.location.search);
     const uuid = urlParams.get('uuid');
     
