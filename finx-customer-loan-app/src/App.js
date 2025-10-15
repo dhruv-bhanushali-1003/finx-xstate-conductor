@@ -5,6 +5,8 @@ import axios from "axios";
 import { setup, assign, fromPromise } from "xstate";
 import { useMachine } from "@xstate/react";
 import { useForm } from "react-hook-form";
+import { Form } from 'react-formio';
+import 'formiojs/dist/formio.full.css';
 
 // -------------------- Conductor Service --------------------
 const ConductorService = {
@@ -292,6 +294,8 @@ export const loanMachine = setup({
 
 // -------------------- Forms --------------------
 
+// Commented out original PersonalInfoForm
+/*
 function PersonalInfoForm({ onUpdate, onSubmit, formData }) {
   const { register, handleSubmit, watch } = useForm();
   const [agreed, setAgreed] = useState(false);
@@ -375,6 +379,22 @@ function PersonalInfoForm({ onUpdate, onSubmit, formData }) {
           Next
         </button>
       </form>
+    </div>
+  );
+}
+*/
+
+// New PersonalInfoForm using form-io react package
+function PersonalInfoForm({ onUpdate, onSubmit, formData }) {
+  return (
+    <div className="max-w-lg mx-auto bg-white p-6 rounded-xl shadow-md">
+      <Form
+        src="http://3.110.81.211/form/68ee1dd19bd3200d522395c8"
+        onSubmit={(submission) => {
+          onUpdate(submission.data);
+          onSubmit(submission.data);
+        }}
+      />
     </div>
   );
 }
