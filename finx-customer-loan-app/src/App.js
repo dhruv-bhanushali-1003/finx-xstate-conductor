@@ -317,97 +317,6 @@ async function loginAndGetToken() {
 
 // -------------------- Forms --------------------
 
-// Commented out original PersonalInfoForm
-/*
-function PersonalInfoForm({ onUpdate, onSubmit, formData }) {
-  const { register, handleSubmit, watch } = useForm();
-  const [agreed, setAgreed] = useState(false);
-
-  React.useEffect(() => {
-    const subscription = watch((values) => onUpdate(values));
-    return () => subscription; // React Hook Form v7+ does not need unsubscribe
-  }, [watch, onUpdate]);
-
-  return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-3">
-        Personal Information
-      </h2>
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Full Name
-          </label>
-          <input
-            {...register("fullName")}
-            className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Email
-          </label>
-          <input
-            {...register("email")}
-            type="email"
-            className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Phone
-          </label>
-          <input
-            {...register("phone")}
-            className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Loan Amount
-          </label>
-          <input
-            {...register("loanAmount")}
-            className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-          />
-        </div>
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-            <p className="text-sm text-gray-600 mb-3">
-              <strong>Disclaimer:</strong> By proceeding, you confirm that the
-              information provided above is true and accurate to the best of your
-              knowledge. Any false or misleading details may affect your loan
-              application process.
-            </p>
-            <label className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                checked={agreed}
-                onChange={() => setAgreed(!agreed)}
-                className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-              />
-              <span className="text-sm text-gray-700">
-                I have read and agree to the above disclaimer.
-              </span>
-            </label>
-          </div>
-        <button
-          type="submit"
-          disabled={!agreed}
-          className={`w-full font-semibold py-3 px-6 rounded-lg transition-colors shadow-md ${
-            (agreed)
-              ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-              : "bg-gray-300 text-gray-500 cursor-not-allowed"
-          }`}
-        >
-          Next
-        </button>
-      </form>
-    </div>
-  );
-}
-*/
-
-// New PersonalInfoForm using form-io react package
 function PersonalInfoForm({ onUpdate, onSubmit, formData }) {
   return (
     <div className="mx-auto bg-white p-6 rounded-xl shadow-md form-container">
@@ -460,54 +369,18 @@ function EmploymentInfoForm({ onUpdate, onSubmit }) {
 }
 
 function AdditionalInfoForm({ onUpdate, onSubmit }) {
-  const { register, handleSubmit, watch } = useForm();
-
-  React.useEffect(() => {
-    const subscription = watch((values) => onUpdate(values));
-    return () => subscription;
-  }, [watch, onUpdate]);
-
-  return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-3">
-        Additional Information for Self-Employed
-      </h2>
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Business Type
-          </label>
-          <input
-            {...register("businessType")}
-            className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Annual Business Revenue
-          </label>
-          <input
-            {...register("businessRevenue")}
-            type="number"
-            className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Tax ID / Business Registration Number
-          </label>
-          <input
-            {...register("taxId")}
-            className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-          />
-        </div>
-        <button
-          type="submit"
-          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors shadow-md"
-        >
-          Submit
-        </button>
-      </form>
+ return (
+    <div className="mx-auto bg-white p-6 rounded-xl shadow-md form-container">
+      <Form
+        src="http://3.110.81.211/form/68ef77269bd3200d5223ab42"
+        options={{readOnly: false,
+          noAlerts: true,
+          template: 'bootstrap3' }}
+        onSubmit={(submission) => {
+          onUpdate(submission.data);
+          onSubmit(submission.data);
+        }}
+      />
     </div>
   );
 }

@@ -5,6 +5,11 @@ import axios from "axios";
 import { setup, assign, fromPromise } from "xstate";
 import { useMachine } from "@xstate/react";
 import { useForm } from "react-hook-form";
+import { Form } from 'react-formio';
+import 'formiojs/dist/formio.full.css';
+import { Formio } from 'formiojs';
+
+Formio.setBaseUrl('http://3.110.81.211');
 
 // -------------------- Conductor Service --------------------
 const ConductorService = {
@@ -296,469 +301,108 @@ export const loanMachine = setup({
   },
 });
 
+async function loginAndGetToken() {
+  const response = await fetch('http://3.110.81.211/user/login', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json'
+    },
+    body: JSON.stringify({
+      data: {
+        email: 'satish@fincuro.9on.in',
+        password: 'Satish@123456'
+      }
+    })
+  });
+
+  const token = response.headers.get('x-jwt-token');
+  Formio.setToken(token); 
+}
+
 // -------------------- Forms --------------------
 
 function TermsAndConditionsForm({ onUpdate, onSubmit }) {
-  const [agreed, setAgreed] = useState(false);
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSubmit({ termsAccepted: true });
-  };
-
-  return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-3">
-        Terms and Conditions
-      </h2>
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 max-h-96 overflow-y-auto">
-          <div className="text-sm text-gray-700 space-y-4">
-            <h3 className="font-semibold text-lg">
-              Loan Application Terms and Conditions
-            </h3>
-
-            <div className="space-y-3">
-              <h4 className="font-semibold text-base text-gray-800">
-                Application and Approval Process
-              </h4>
-              <p>
-                <strong>1. Application Process:</strong> By submitting this
-                application, you authorize us to verify the information provided
-                and conduct comprehensive credit checks, employment
-                verification, and income validation as necessary for loan
-                evaluation. This may include contacting your employer, bank, and
-                other financial institutions.
-              </p>
-
-              <p>
-                <strong>2. Information Accuracy:</strong> You certify that all
-                information provided in this application is true, complete, and
-                accurate to the best of your knowledge. Any false, misleading,
-                or incomplete information may result in immediate application
-                rejection, loan termination, or legal action. You agree to
-                notify us immediately of any changes to the information
-                provided.
-              </p>
-
-              <p>
-                <strong>3. Credit Authorization:</strong> You authorize us to
-                obtain credit reports from one or more credit reporting agencies
-                and verify employment, income, assets, debts, and other
-                information with third parties including but not limited to
-                employers, banks, creditors, and government agencies as needed
-                for loan processing and ongoing account management.
-              </p>
-
-              <p>
-                <strong>4. Loan Approval:</strong> Loan approval is not
-                guaranteed and is subject to our underwriting guidelines, credit
-                policies, and regulatory requirements. We reserve the right to
-                request additional documentation, require a co-signer, modify
-                loan terms, or decline the application at our sole discretion.
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              <h4 className="font-semibold text-base text-gray-800">
-                Loan Terms and Conditions
-              </h4>
-              <p>
-                <strong>5. Interest Rates and APR:</strong> Interest rates are
-                subject to change and will be determined based on
-                creditworthiness, loan amount, loan term, collateral (if
-                applicable), and current market conditions at the time of
-                approval. The Annual Percentage Rate (APR) will be disclosed in
-                your loan agreement and includes all applicable fees and
-                charges.
-              </p>
-
-              <p>
-                <strong>6. Loan Amount and Term:</strong> The final loan amount
-                and repayment term may differ from your requested amount based
-                on our underwriting decision. Minimum loan amounts, maximum loan
-                amounts, and available terms are subject to our current lending
-                policies and may vary by loan type.
-              </p>
-
-              <p>
-                <strong>7. Fees and Charges:</strong> Applicable fees may
-                include but are not limited to: origination fees, processing
-                fees, application fees, late payment fees, returned payment
-                fees, and prepayment penalties (if applicable). All fees will be
-                clearly disclosed before loan finalization and may be deducted
-                from loan proceeds or added to your loan balance.
-              </p>
-
-              <p>
-                <strong>8. Collateral and Security:</strong> Depending on the
-                loan type and amount, collateral may be required to secure the
-                loan. You agree that any collateral pledged may be subject to
-                appraisal, insurance requirements, and our security interest
-                until the loan is paid in full.
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              <h4 className="font-semibold text-base text-gray-800">
-                Repayment and Default
-              </h4>
-              <p>
-                <strong>9. Repayment Terms:</strong> Monthly payments are due on
-                the same date each month as specified in your loan agreement.
-                Payments must be received by the due date to avoid late fees.
-                You may choose from available payment methods including
-                automatic deduction, online payments, or mail.
-              </p>
-
-              <p>
-                <strong>10. Late Payments and Default:</strong> Payments
-                received after the due date will incur late fees as specified in
-                your loan agreement. If your account becomes 30 days or more
-                past due, it may be reported to credit bureaus. Default occurs
-                when payments are significantly past due or other loan terms are
-                violated, which may result in acceleration of the entire loan
-                balance.
-              </p>
-
-              <p>
-                <strong>11. Prepayment Rights:</strong> You have the right to
-                prepay your loan in whole or in part at any time. Depending on
-                your loan type, prepayment penalties may apply as disclosed in
-                your loan agreement. Prepayments will be applied first to
-                accrued interest, then to principal balance.
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              <h4 className="font-semibold text-base text-gray-800">
-                Privacy and Communication
-              </h4>
-              <p>
-                <strong>12. Privacy Policy:</strong> Your personal and financial
-                information will be handled in accordance with our privacy
-                policy and applicable federal and state data protection laws
-                including the Fair Credit Reporting Act (FCRA) and
-                Gramm-Leach-Bliley Act. We may share your information with
-                affiliates, service providers, and as required by law.
-              </p>
-
-              <p>
-                <strong>13. Communication Consent:</strong> You consent to
-                receive communications regarding your application and loan
-                account via phone (including automated calls and text messages),
-                email, mail, or other electronic means at the contact
-                information provided. You may opt out of certain communications
-                as permitted by law.
-              </p>
-
-              <p>
-                <strong>14. Electronic Records:</strong> You agree to receive
-                loan documents, statements, and notices electronically.
-                Electronic records will have the same legal effect as paper
-                records. You may request paper copies for a fee as disclosed in
-                your loan agreement.
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              <h4 className="font-semibold text-base text-gray-800">
-                Legal and Regulatory
-              </h4>
-              <p>
-                <strong>15. Processing Time:</strong> Application processing
-                typically takes 2-5 business days for standard applications.
-                Complex applications requiring additional documentation or
-                verification may require 7-14 business days or longer.
-                Processing times are estimates and not guaranteed.
-              </p>
-
-              <p>
-                <strong>16. Right to Cancel:</strong> You have the right to
-                cancel this application at any time before loan disbursement
-                without penalty. For certain loan types, you may have a right of
-                rescission after loan closing as required by federal law.
-              </p>
-
-              <p>
-                <strong>17. Governing Law and Jurisdiction:</strong> This
-                agreement is governed by federal law and the laws of the state
-                where the loan is originated or where you reside, whichever
-                provides greater consumer protection. Any disputes will be
-                resolved in the appropriate courts of that jurisdiction.
-              </p>
-
-              <p>
-                <strong>18. Modification and Updates:</strong> We may update
-                these terms and conditions from time to time. Material changes
-                will be communicated to you at least 30 days before they take
-                effect. Your continued use of our services constitutes
-                acceptance of updated terms.
-              </p>
-
-              <p>
-                <strong>19. Severability:</strong> If any provision of these
-                terms is found to be unenforceable, the remaining provisions
-                will continue in full force and effect. We may replace
-                unenforceable provisions with similar enforceable terms.
-              </p>
-
-              <p>
-                <strong>20. Entire Agreement:</strong> These terms, together
-                with your loan agreement and any amendments, constitute the
-                entire agreement between you and us regarding your loan
-                application and supersede all prior negotiations,
-                representations, or agreements relating to this subject matter.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-          <label className="flex items-start space-x-3">
-            <input
-              type="checkbox"
-              checked={agreed}
-              onChange={() => setAgreed(!agreed)}
-              className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 mt-1"
-            />
-            <span className="text-sm text-gray-700">
-              I have read, understood, and agree to the above terms and
-              conditions. I acknowledge that this is a legally binding
-              agreement.
-            </span>
-          </label>
-        </div>
-
-        <button
-          type="submit"
-          disabled={!agreed}
-          className={`w-full font-semibold py-3 px-6 rounded-lg transition-colors shadow-md ${
-            agreed
-              ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-              : "bg-gray-300 text-gray-500 cursor-not-allowed"
-          }`}
-        >
-          Accept and Continue
-        </button>
-      </form>
+ return (
+    <div className="mx-auto bg-white p-6 rounded-xl shadow-md form-container">
+      <Form
+        src="http://3.110.81.211/form/68ef4d449bd3200d5223a4c7"
+        options={{readOnly: false,
+          noAlerts: true,
+          template: 'bootstrap3' }}
+        onSubmit={(submission) => {
+          onUpdate(submission.data);
+          onSubmit(submission.data);
+        }}
+      />
     </div>
   );
 }
 
 function PersonalInfoForm({ onUpdate, onSubmit, formData }) {
-  const { register, handleSubmit, watch } = useForm();
-
-  React.useEffect(() => {
-    const subscription = watch((values) => onUpdate(values));
-    return () => subscription; // React Hook Form v7+ does not need unsubscribe
-  }, [watch, onUpdate]);
-
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-3">
-        Personal Information
-      </h2>
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Full Name
-          </label>
-          <input
-            {...register("fullName")}
-            className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Email
-          </label>
-          <input
-            {...register("email")}
-            type="email"
-            className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Phone
-          </label>
-          <input
-            {...register("phone")}
-            className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Loan Amount
-          </label>
-          <input
-            {...register("loanAmount")}
-            className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-          />
-        </div>
-        <button
-          type="submit"
-          className={`w-full font-semibold py-3 px-6 rounded-lg transition-colors shadow-md bg-indigo-600 hover:bg-indigo-700 text-white
-          `}
-        >
-          Next
-        </button>
-      </form>
+    <div className="mx-auto bg-white p-6 rounded-xl shadow-md form-container">
+      <Form
+        src="http://3.110.81.211/form/68ef4f859bd3200d5223a5ba"
+        options={{readOnly: false,
+          noAlerts: true,
+          template: 'bootstrap3' }}
+        onSubmit={(submission) => {
+          onUpdate(submission.data);
+          onSubmit(submission.data);
+        }}
+      />
     </div>
   );
 }
 
-function FinancialInfoForm({ onUpdate, onSubmit }) {
-  const { register, handleSubmit, watch } = useForm();
-
-  React.useEffect(() => {
-    const subscription = watch((values) => onUpdate(values));
-    return () => subscription;
-  }, [watch, onUpdate]);
-
+function FinancialInfoForm({ onUpdate, onSubmit, formData }) {
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-3">
-        Financial Information
-      </h2>
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Monthly Income
-          </label>
-          <input
-            {...register("income")}
-            className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Existing Loans
-          </label>
-          <input
-            {...register("existingLoan")}
-            type="number"
-            className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-          />
-        </div>
-        <button
-          type="submit"
-          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors shadow-md"
-        >
-          Next
-        </button>
-      </form>
+    <div className="mx-auto bg-white p-6 rounded-xl shadow-md form-container">
+      <Form
+        src="http://3.110.81.211/form/68ef53c79bd3200d5223a61e"
+        options={{readOnly: false,
+          noAlerts: true,
+          template: 'bootstrap3' }}
+        onSubmit={(submission) => {
+          onUpdate(submission.data);
+          onSubmit(submission.data);
+        }}
+      />
     </div>
   );
 }
 
 function EmploymentInfoForm({ onUpdate, onSubmit }) {
-  const { register, handleSubmit, watch } = useForm();
-
-  React.useEffect(() => {
-    const subscription = watch((values) => onUpdate(values));
-    return () => subscription;
-  }, [watch, onUpdate]);
-
-  return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-3">
-        Employment Information
-      </h2>
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Employment Type
-          </label>
-          <select
-            {...register("employmentType")}
-            className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-          >
-            <option value="Salaried">Salaried</option>
-            <option value="Self-Employed">Self-Employed</option>
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Employer / Business Name
-          </label>
-          <input
-            {...register("employerName")}
-            className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Years of Experience
-          </label>
-          <input
-            {...register("experience")}
-            type="number"
-            className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-          />
-        </div>
-
-        <button
-          type="submit"
-          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors shadow-md"
-        >
-          Next
-        </button>
-      </form>
+ return (
+    <div className="mx-auto bg-white p-6 rounded-xl shadow-md form-container">
+      <Form
+        src="http://3.110.81.211/form/68ef54809bd3200d5223a650"
+        options={{readOnly: false,
+          noAlerts: true,
+          template: 'bootstrap3' }}
+        onSubmit={(submission) => {
+          onUpdate(submission.data);
+          onSubmit(submission.data);
+        }}
+      />
     </div>
   );
 }
 
 function AdditionalInfoForm({ onUpdate, onSubmit }) {
-  const { register, handleSubmit, watch } = useForm();
-
-  React.useEffect(() => {
-    const subscription = watch((values) => onUpdate(values));
-    return () => subscription;
-  }, [watch, onUpdate]);
-
-  return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-3">
-        Additional Information for Self-Employed
-      </h2>
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Business Type
-          </label>
-          <input
-            {...register("businessType")}
-            className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Annual Business Revenue
-          </label>
-          <input
-            {...register("businessRevenue")}
-            type="number"
-            className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Tax ID / Business Registration Number
-          </label>
-          <input
-            {...register("taxId")}
-            className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-          />
-        </div>
-        <button
-          type="submit"
-          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors shadow-md"
-        >
-          Submit
-        </button>
-      </form>
+ return (
+    <div className="mx-auto bg-white p-6 rounded-xl shadow-md form-container">
+      <Form
+        src="http://3.110.81.211/form/68ef77269bd3200d5223ab42"
+        options={{readOnly: false,
+          noAlerts: true,
+          template: 'bootstrap3' }}
+        onSubmit={(submission) => {
+          onUpdate(submission.data);
+          onSubmit(submission.data);
+        }}
+      />
     </div>
   );
 }
@@ -791,8 +435,10 @@ function ReviewComponent({ formData, onSubmit }) {
 function LoanApplication() {
   const [state, send] = useMachine(loanMachine);
   const { currentTask, formData, error } = state.context;
+  const [token, setToken] = useState(null);
 
   useEffect(() => {
+    loginAndGetToken().then(setToken);
     const urlParams = new URLSearchParams(window.location.search);
     const uuid = urlParams.get("uuid");
 
