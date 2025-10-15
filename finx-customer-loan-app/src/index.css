@@ -146,7 +146,11 @@
   margin-bottom: 0 !important;
   cursor: pointer !important;
 }
-
+/* Target the select input inside Form.io select component */
+.formio-form .formio-component-select {
+  min-height: 4rem !important;  /* Controls actual height */
+  height: 4rem !important;
+}
 /* Add border to the Choices.js rendered dropdown */
 .choices__list--single {
   border: 1px solid #ced4da; /* Bootstrap default border color */
