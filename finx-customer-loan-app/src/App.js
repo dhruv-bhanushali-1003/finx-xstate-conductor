@@ -7,6 +7,9 @@ import { useMachine } from "@xstate/react";
 import { useForm } from "react-hook-form";
 import { Form } from 'react-formio';
 import 'formiojs/dist/formio.full.css';
+import { Formio } from 'formiojs';
+
+Formio.setBaseUrl('http://3.110.81.211');
 
 // -------------------- Conductor Service --------------------
 const ConductorService = {
@@ -291,6 +294,26 @@ export const loanMachine = setup({
     },
   },
 });
+
+async function loginAndGetToken() {
+  const response = await fetch('http://3.110.81.211/user/login', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json'
+    },
+    body: JSON.stringify({
+      data: {
+        email: 'satish@fincuro.9on.in',
+        password: 'Satish@123456'
+      }
+    })
+  });
+
+  const token = response.headers.get('x-jwt-token');
+  Formio.setToken(token); 
+}
+
 
 // -------------------- Forms --------------------
 
@@ -582,8 +605,10 @@ function ReviewComponent({ formData, onSubmit }) {
 function LoanApplication() {
   const [state, send] = useMachine(loanMachine);
   const { currentTask, formData, error } = state.context;
+  const [token, setToken] = useState(null);
 
   useEffect(() => {
+    loginAndGetToken().then(setToken);
     const urlParams = new URLSearchParams(window.location.search);
     const uuid = urlParams.get('uuid');
     
