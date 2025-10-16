@@ -164,3 +164,8 @@
   border-color: #80bdff;
   box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
 }
+/* Remove background from the button wrapper div */
+.formio-component-button {
+  background: transparent !important;
+  box-shadow: none !important; /* remove any shadow */
+}
