@@ -21,10 +21,9 @@ services:
       - "9000:3000"
     environment:
       - NODE_ENV=production
-      - REACT_APP_API_BASE_URL=http://3.110.81.211
-      - REACT_APP_LOGIN_EMAIL=satish@fincuro.9on.in
-      - REACT_APP_LOGIN_PASSWORD=Satish@123456
-      - REACT_APP_FORM_BASE_URL=http://3.110.81.211/form
+      - REACT_APP_FORMIO_API_BASE_URL=http://3.110.81.211
+      - REACT_APP_FORMIO_LOGIN_EMAIL=satish@fincuro.9on.in
+      - REACT_APP_FORMIO_LOGIN_PASSWORD=Satish@123456
     depends_on:
       - fincuro-loan-officer
 

@@ -310,7 +310,7 @@ export const loanMachine = setup({
 });
 
 async function loginAndGetToken() {
-  const response = await fetch(`${process.env.FORMIO_API_BASE_URL}/user/login`, {
+  const response = await fetch(`${process.env.REACT_APP_FORMIO_API_BASE_URL}/user/login`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -318,8 +318,8 @@ async function loginAndGetToken() {
     },
     body: JSON.stringify({
       data: {
-        email: process.env.FORMIO_LOGIN_EMAIL,
-        password: process.env.FORMIO_LOGIN_PASSWORD,
+        email: process.env.REACT_APP_FORMIO_LOGIN_EMAIL,
+        password: process.env.REACT_APP_FORMIO_LOGIN_PASSWORD,
       },
     }),
   });
@@ -334,7 +334,7 @@ function FormRenderer({ onUpdate, onSubmit, formId }) {
   return (
     <div className="mx-auto bg-white p-6 rounded-xl shadow-md form-container">
       <Form
-        src={`${process.env.FORMIO_API_BASE_URL}/form/${formId}`}
+        src={`${process.env.REACT_APP_FORMIO_API_BASE_URL}/form/${formId}`}
         options={{ readOnly: false, noAlerts: true, template: "bootstrap3" }}
         onSubmit={(submission) => {
           onUpdate(submission.data);
