@@ -5,17 +5,20 @@ import axios from "axios";
 import { setup, assign, fromPromise } from "xstate";
 import { useMachine } from "@xstate/react";
 import { useForm } from "react-hook-form";
-import { Form } from 'react-formio';
-import 'formiojs/dist/formio.full.css';
-import { Formio } from 'formiojs';
+import { Form } from "react-formio";
+import "formiojs/dist/formio.full.css";
+import { Formio } from "formiojs";
 
-Formio.setBaseUrl('http://3.110.81.211');
+Formio.setBaseUrl("http://3.110.81.211");
 
 // -------------------- Conductor Service --------------------
 const ConductorService = {
   async startWorkflow(workflowName = "Finx Bank loan-application-process") {
     try {
-      const res = await axios.post(`https://base-api.fincuro.in/gateway/ui-workflow/api/workflow`, { name: workflowName });
+      const res = await axios.post(
+        `https://base-api.fincuro.in/gateway/ui-workflow/api/workflow`,
+        { name: workflowName }
+      );
       return { workflowId: res.data };
     } catch (err) {
       console.error("startWorkflow error:", err);
@@ -39,7 +42,9 @@ const ConductorService = {
 
   async getWorkflowStatus(workflowId) {
     try {
-      const res = await axios.get(`https://base-api.fincuro.in/gateway/ui-workflow/api/workflow/${workflowId}`);
+      const res = await axios.get(
+        `https://base-api.fincuro.in/gateway/ui-workflow/api/workflow/${workflowId}`
+      );
       return res.data;
     } catch (err) {
       console.error("getWorkflowStatus error:", err);
@@ -65,12 +70,15 @@ const ConductorService = {
   async completeTask(workflowInstanceId, taskId, outputData) {
     try {
       console.log("Completing task:", taskId, "with data:", outputData);
-      const res = await axios.post(`https://base-api.fincuro.in/gateway/ui-workflow/api/tasks`, {
-        taskId,
-        workflowInstanceId,
-        status: "COMPLETED",
-        outputData,
-      });
+      const res = await axios.post(
+        `https://base-api.fincuro.in/gateway/ui-workflow/api/tasks`,
+        {
+          taskId,
+          workflowInstanceId,
+          status: "COMPLETED",
+          outputData,
+        }
+      );
       return res.data;
     } catch (err) {
       console.error("completeTask error:", err);
@@ -102,7 +110,7 @@ export const loanMachine = setup({
         return { status: workflow.status, task: null };
       }
       const polled = await ConductorService.pollForTask(nextUiTask.taskDefName);
-      if (!polled?.inputData?.ui_component) {
+      if (!polled?.inputData?.form_id) {
         console.warn("Polled task is not UI:", polled?.taskDefName);
         return { status: workflow.status, task: null };
       }
@@ -141,10 +149,10 @@ export const loanMachine = setup({
   },
   states: {
     idle: {
-      on: { 
+      on: {
         FORM_UPDATE: {
           actions: assign({
-            workflowId: ({ context, event }) => 
+            workflowId: ({ context, event }) =>
               (event.data || event).workflowId || context.workflowId,
             formData: ({ context, event }) => ({
               ...context.formData,
@@ -155,16 +163,22 @@ export const loanMachine = setup({
         START: [
           {
             guard: ({ context }) => {
-              console.log("Guard check - context.workflowId:", context.workflowId);
-              console.log("Guard check - context.formData.workflowId:", context.formData?.workflowId);
+              console.log(
+                "Guard check - context.workflowId:",
+                context.workflowId
+              );
+              console.log(
+                "Guard check - context.formData.workflowId:",
+                context.formData?.workflowId
+              );
               return context.workflowId;
             },
-            target: "polling"
+            target: "polling",
           },
           {
-            target: "starting"
-          }
-        ]
+            target: "starting",
+          },
+        ],
       },
     },
 
@@ -243,7 +257,7 @@ export const loanMachine = setup({
       on: {
         FORM_UPDATE: {
           actions: assign({
-            workflowId: ({ context, event }) => 
+            workflowId: ({ context, event }) =>
               (event.data || event).workflowId || context.workflowId,
             formData: ({ context, event }) => ({
               ...context.formData,
@@ -296,24 +310,23 @@ export const loanMachine = setup({
 });
 
 async function loginAndGetToken() {
-  const response = await fetch('http://3.110.81.211/user/login', {
-    method: 'POST',
+  const response = await fetch("http://3.110.81.211/user/login", {
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json'
+      "Content-Type": "application/json",
+      Accept: "application/json",
     },
     body: JSON.stringify({
       data: {
-        email: 'satish@fincuro.9on.in',
-        password: 'Satish@123456'
-      }
-    })
+        email: "satish@fincuro.9on.in",
+        password: "Satish@123456",
+      },
+    }),
   });
 
-  const token = response.headers.get('x-jwt-token');
-  Formio.setToken(token); 
+  const token = response.headers.get("x-jwt-token");
+  Formio.setToken(token);
 }
-
 
 // -------------------- Forms --------------------
 
@@ -322,9 +335,7 @@ function PersonalInfoForm({ onUpdate, onSubmit, formData }) {
     <div className="mx-auto bg-white p-6 rounded-xl shadow-md form-container">
       <Form
         src="http://3.110.81.211/form/68ee1dd19bd3200d522395c8"
-        options={{readOnly: false,
-          noAlerts: true,
-          template: 'bootstrap3' }}
+        options={{ readOnly: false, noAlerts: true, template: "bootstrap3" }}
         onSubmit={(submission) => {
           onUpdate(submission.data);
           onSubmit(submission.data);
@@ -339,9 +350,7 @@ function FinancialInfoForm({ onUpdate, onSubmit, formData }) {
     <div className="mx-auto bg-white p-6 rounded-xl shadow-md form-container">
       <Form
         src="http://3.110.81.211/form/68ef53c79bd3200d5223a61e"
-        options={{readOnly: false,
-          noAlerts: true,
-          template: 'bootstrap3' }}
+        options={{ readOnly: false, noAlerts: true, template: "bootstrap3" }}
         onSubmit={(submission) => {
           onUpdate(submission.data);
           onSubmit(submission.data);
@@ -352,13 +361,11 @@ function FinancialInfoForm({ onUpdate, onSubmit, formData }) {
 }
 
 function EmploymentInfoForm({ onUpdate, onSubmit }) {
- return (
+  return (
     <div className="mx-auto bg-white p-6 rounded-xl shadow-md form-container">
       <Form
         src="http://3.110.81.211/form/68ef54809bd3200d5223a650"
-        options={{readOnly: false,
-          noAlerts: true,
-          template: 'bootstrap3' }}
+        options={{ readOnly: false, noAlerts: true, template: "bootstrap3" }}
         onSubmit={(submission) => {
           onUpdate(submission.data);
           onSubmit(submission.data);
@@ -369,13 +376,11 @@ function EmploymentInfoForm({ onUpdate, onSubmit }) {
 }
 
 function AdditionalInfoForm({ onUpdate, onSubmit }) {
- return (
+  return (
     <div className="mx-auto bg-white p-6 rounded-xl shadow-md form-container">
       <Form
         src="http://3.110.81.211/form/68ef77269bd3200d5223ab42"
-        options={{readOnly: false,
-          noAlerts: true,
-          template: 'bootstrap3' }}
+        options={{ readOnly: false, noAlerts: true, template: "bootstrap3" }}
         onSubmit={(submission) => {
           onUpdate(submission.data);
           onSubmit(submission.data);
@@ -409,6 +414,21 @@ function ReviewComponent({ formData, onSubmit }) {
   );
 }
 
+function FormRenderer({ onUpdate, onSubmit, formId }) {
+  return (
+    <div className="mx-auto bg-white p-6 rounded-xl shadow-md form-container">
+      <Form
+        src={`http://3.110.81.211/form/${formId}`}
+        options={{ readOnly: false, noAlerts: true, template: "bootstrap3" }}
+        onSubmit={(submission) => {
+          onUpdate(submission.data);
+          onSubmit(submission.data);
+        }}
+      />
+    </div>
+  );
+}
+
 // -------------------- Main App --------------------
 function LoanApplication() {
   const [state, send] = useMachine(loanMachine);
@@ -418,8 +438,8 @@ function LoanApplication() {
   useEffect(() => {
     loginAndGetToken().then(setToken);
     const urlParams = new URLSearchParams(window.location.search);
-    const uuid = urlParams.get('uuid');
-    
+    const uuid = urlParams.get("uuid");
+
     if (uuid) {
       console.log("Loading existing application with UUID:", uuid);
       loadExistingApplication(uuid);
@@ -432,20 +452,23 @@ function LoanApplication() {
     try {
       const applicationData = await ConductorService.getApplicationByUUID(uuid);
       console.log("Loaded application data:", applicationData);
-      
+
       // First update the context with existing data
-      send({ 
-        type: "FORM_UPDATE", 
-        data: applicationData.formData
+      send({
+        type: "FORM_UPDATE",
+        data: applicationData.formData,
       });
-      
+
       // Small delay to ensure context is updated before START
       setTimeout(() => {
-        console.log("Starting with existing workflowId:", applicationData.formData.workflowId);
+        console.log(
+          "Starting with existing workflowId:",
+          applicationData.formData.workflowId
+        );
         send({ type: "START" });
       }, 1000);
     } catch (error) {
-      console.error('Failed to load application:', error);
+      console.error("Failed to load application:", error);
       send({ type: "START" });
     }
   };
@@ -495,7 +518,12 @@ function LoanApplication() {
         )}
         {state.matches("rendering") && (
           <>
-            {currentTask?.inputData?.ui_component === "PersonalInfoForm" && (
+            <FormRenderer
+              onUpdate={handleUpdate}
+              onSubmit={handleSubmit}
+              formId={currentTask?.inputData?.form_id}
+            />
+            {/* {currentTask?.inputData?.ui_component === "PersonalInfoForm" && (
               <PersonalInfoForm
                 onUpdate={handleUpdate}
                 onSubmit={handleSubmit}
@@ -522,7 +550,7 @@ function LoanApplication() {
             )}
             {currentTask?.inputData?.ui_component === "ReviewSubmitScreen" && (
               <ReviewComponent formData={formData} onSubmit={handleSubmit} />
-            )}
+            )} */}
           </>
         )}
 
@@ -549,8 +577,8 @@ function LoanApplication() {
               processed.
             </p>
             <p className="text-green-600">
-              We will get back to you soon with an update on
-              your application status.
+              We will get back to you soon with an update on your application
+              status.
             </p>
           </div>
         )}
