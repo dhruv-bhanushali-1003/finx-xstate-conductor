@@ -18,9 +18,13 @@ services:
   fincuro-customer:
     build: ./fincuro-customer-loan-app
     ports:
-      - "9000:9000"
+      - "9000:3000"
     environment:
       - NODE_ENV=production
+      - REACT_APP_API_BASE_URL=http://3.110.81.211
+      - REACT_APP_LOGIN_EMAIL=satish@fincuro.9on.in
+      - REACT_APP_LOGIN_PASSWORD=Satish@123456
+      - REACT_APP_FORM_BASE_URL=http://3.110.81.211/form
     depends_on:
       - fincuro-loan-officer
 

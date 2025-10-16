@@ -310,7 +310,7 @@ export const loanMachine = setup({
 });
 
 async function loginAndGetToken() {
-  const response = await fetch("http://3.110.81.211/user/login", {
+  const response = await fetch(`${process.env.FORMIO_API_BASE_URL}/user/login`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -318,8 +318,8 @@ async function loginAndGetToken() {
     },
     body: JSON.stringify({
       data: {
-        email: "satish@fincuro.9on.in",
-        password: "Satish@123456",
+        email: process.env.FORMIO_LOGIN_EMAIL,
+        password: process.env.FORMIO_LOGIN_PASSWORD,
       },
     }),
   });
@@ -330,95 +330,11 @@ async function loginAndGetToken() {
 
 // -------------------- Forms --------------------
 
-function PersonalInfoForm({ onUpdate, onSubmit, formData }) {
-  return (
-    <div className="mx-auto bg-white p-6 rounded-xl shadow-md form-container">
-      <Form
-        src="http://3.110.81.211/form/68ee1dd19bd3200d522395c8"
-        options={{ readOnly: false, noAlerts: true, template: "bootstrap3" }}
-        onSubmit={(submission) => {
-          onUpdate(submission.data);
-          onSubmit(submission.data);
-        }}
-      />
-    </div>
-  );
-}
-
-function FinancialInfoForm({ onUpdate, onSubmit, formData }) {
-  return (
-    <div className="mx-auto bg-white p-6 rounded-xl shadow-md form-container">
-      <Form
-        src="http://3.110.81.211/form/68ef53c79bd3200d5223a61e"
-        options={{ readOnly: false, noAlerts: true, template: "bootstrap3" }}
-        onSubmit={(submission) => {
-          onUpdate(submission.data);
-          onSubmit(submission.data);
-        }}
-      />
-    </div>
-  );
-}
-
-function EmploymentInfoForm({ onUpdate, onSubmit }) {
-  return (
-    <div className="mx-auto bg-white p-6 rounded-xl shadow-md form-container">
-      <Form
-        src="http://3.110.81.211/form/68ef54809bd3200d5223a650"
-        options={{ readOnly: false, noAlerts: true, template: "bootstrap3" }}
-        onSubmit={(submission) => {
-          onUpdate(submission.data);
-          onSubmit(submission.data);
-        }}
-      />
-    </div>
-  );
-}
-
-function AdditionalInfoForm({ onUpdate, onSubmit }) {
-  return (
-    <div className="mx-auto bg-white p-6 rounded-xl shadow-md form-container">
-      <Form
-        src="http://3.110.81.211/form/68ef77269bd3200d5223ab42"
-        options={{ readOnly: false, noAlerts: true, template: "bootstrap3" }}
-        onSubmit={(submission) => {
-          onUpdate(submission.data);
-          onSubmit(submission.data);
-        }}
-      />
-    </div>
-  );
-}
-
-function ReviewComponent({ formData, onSubmit }) {
-  return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-3">
-        Review & Submit
-      </h2>
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
-        <h3 className="text-lg font-medium text-gray-800 mb-3">
-          Application Summary
-        </h3>
-        <pre className="text-sm text-gray-600 whitespace-pre-wrap">
-          {JSON.stringify(formData, null, 2)}
-        </pre>
-      </div>
-      <button
-        onClick={onSubmit}
-        className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors shadow-md"
-      >
-        Submit Application
-      </button>
-    </div>
-  );
-}
-
 function FormRenderer({ onUpdate, onSubmit, formId }) {
   return (
     <div className="mx-auto bg-white p-6 rounded-xl shadow-md form-container">
       <Form
-        src={`http://3.110.81.211/form/${formId}`}
+        src={`${process.env.FORMIO_API_BASE_URL}/form/${formId}`}
         options={{ readOnly: false, noAlerts: true, template: "bootstrap3" }}
         onSubmit={(submission) => {
           onUpdate(submission.data);

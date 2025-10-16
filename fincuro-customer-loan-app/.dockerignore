@@ -4,6 +4,8 @@ npm-debug.log
 .gitignore
 README.md
 .env
+.env.local
+.env.production
 .nyc_output
 coverage
 .DS_Store
