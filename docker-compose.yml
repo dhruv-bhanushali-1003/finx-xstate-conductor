@@ -21,7 +21,7 @@ services:
   fincuro-customer:
     build: ./fincuro-customer-loan-app
     ports:
-      - "9000:3000"
+      - "9000:9000"
     environment:
       - NODE_ENV=production
       - REACT_APP_FORMIO_API_BASE_URL=http://3.110.81.211
