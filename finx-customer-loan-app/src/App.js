@@ -345,11 +345,154 @@ function FormRenderer({ onUpdate, onSubmit, formId }) {
   );
 }
 
+// -------------------- Panel Components --------------------
+function TopPanel() {
+  return (
+    <div className="text-white px-6 py-4 flex items-center justify-between w-full relative z-10" style={{ backgroundColor: '#33297A' }}>
+      <div className="flex items-center">
+        <img 
+          src="/finxlogo.png" 
+          alt="FinX Logo" 
+          className="h-12 w-auto mr-4"
+          onError={(e) => {
+            console.log('Image failed to load:', e.target.src);
+            e.target.style.display = 'none';
+          }}
+        />
+      </div>
+      <div className="flex items-center space-x-4">    
+        <div className="flex items-center space-x-4">
+          {/* Search Icon */}
+          <div className="w-10 h-10 flex items-center justify-center cursor-pointer">
+            <img 
+              src="/search.png" 
+              alt="Search" 
+              className="w-6 h-6 brightness-150"
+              onError={(e) => {
+                e.target.style.display = 'none';
+              }}
+            />
+          </div>
+          {/* Notification Icon */}
+          <div className="w-10 h-10 flex items-center justify-center cursor-pointer">
+            <img 
+              src="/notification.png" 
+              alt="Notifications" 
+              className="w-6 h-6 brightness-150"
+              onError={(e) => {
+                e.target.style.display = 'none';
+              }}
+            />
+          </div>
+          {/* Profile Icon */}
+          <div className="w-10 h-10 flex items-center justify-center cursor-pointer">
+            <img 
+              src="/Profile.png" 
+              alt="Profile" 
+              className="w-8 h-8 rounded-full brightness-150"
+              onError={(e) => {
+                e.target.style.display = 'none';
+              }}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LeftPanel({ activeItem, onItemClick, disabled = false }) {
+  const menuItems = [
+    { id: 'home', label: 'Home', icon: '/Home.png' },
+    { id: 'personal', label: 'Personal Information', icon: '/Personalwhite.png' },
+    { id: 'finance', label: 'Finance Information', icon: '/Finacial.png' },
+    { id: 'employment', label: 'Employment Information', icon: '/Employment.png' }
+  ];
+
+  return (
+    <div className="w-72 bg-white rounded-lg shadow-lg mx-4 my-4 min-h-screen">
+      <div className="p-6">
+        <nav className="space-y-1">
+          {menuItems.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => onItemClick && onItemClick(item.id)}
+              disabled={disabled}
+              className={`w-full flex items-center px-4 py-3 text-left rounded-lg transition-colors ${
+                activeItem === item.id
+                  ? 'text-white'
+                  : disabled
+                  ? 'text-gray-400 cursor-not-allowed'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+              style={activeItem === item.id ? { backgroundColor: '#33297A' } : {}}
+            >
+              <img 
+                src={item.icon} 
+                alt={item.label} 
+                className="w-5 h-5 mr-3"
+                onError={(e) => {
+                  console.log('Icon failed to load:', e.target.src);
+                  e.target.style.display = 'none';
+                }}
+              />
+              <span className="font-medium">{item.label}</span>
+            </button>
+          ))}
+        </nav>
+      </div>
+    </div>
+  );
+}
+
 // -------------------- Main App --------------------
 function LoanApplication() {
   const [state, send] = useMachine(loanMachine);
   const { currentTask, formData, error } = state.context;
   const [token, setToken] = useState(null);
+  const [activeMenuItem, setActiveMenuItem] = useState('personal');
+  const [navigationEnabled, setNavigationEnabled] = useState(false);
+
+  // Map Form.io components to menu items
+  const getMenuItemFromForm = (uiComponent, formId) => {
+    const componentMap = {
+      'PersonalInfoForm': 'personal',
+      'FinancialInfoForm': 'finance', 
+      'EmploymentInfoForm': 'employment',
+    };
+    
+    // If we have a UI component, use that
+    if (uiComponent && componentMap[uiComponent]) {
+      return componentMap[uiComponent];
+    }
+    
+    // Fallback: try to determine from form ID patterns
+    if (formId) {
+      const formIdLower = formId.toLowerCase();
+      if (formIdLower.includes('personal') || formIdLower.includes('personalinfo')) {
+        return 'personal';
+      } else if (formIdLower.includes('financial') || formIdLower.includes('finance')) {
+        return 'finance';
+      } else if (formIdLower.includes('employment') || formIdLower.includes('employ')) {
+        return 'employment';
+      }
+    }
+    
+    return 'personal'; // default fallback
+  };
+
+  // Handle tab navigation
+  const handleTabNavigation = (menuItemId) => {
+    if (!navigationEnabled) {
+      console.log('Navigation disabled during workflow');
+      return;
+    }   
+    // Only allow navigation if we're in a stable state
+    if (!state.matches("rendering") && !state.matches("idle")) {
+      console.log('Cannot navigate during workflow processing');
+      return;
+    }
+  };
 
   useEffect(() => {
     loginAndGetToken().then(setToken);
@@ -363,6 +506,27 @@ function LoanApplication() {
       send({ type: "START" });
     }
   }, [send]);
+
+  // Update active menu item when current task changes
+  useEffect(() => {
+    console.log(currentTask,formData,"currentTask")
+    if (currentTask?.inputData) {
+      const menuItem = getMenuItemFromForm(
+        currentTask.inputData.ui_component, 
+        currentTask.inputData.form_id
+      );
+      setActiveMenuItem(menuItem);
+      console.log('Updated active menu item to:', menuItem, 'for component:', currentTask.inputData.ui_component, 'formId:', currentTask.inputData.form_id);
+    }
+  }, [currentTask]);
+
+  // Enable/disable navigation based on workflow state
+  useEffect(() => {
+    // Enable navigation only when rendering forms (not during loading, validation, etc.)
+    const isNavigationEnabled = state.matches("rendering") || state.matches("idle");
+    setNavigationEnabled(isNavigationEnabled);
+    console.log('Navigation enabled:', isNavigationEnabled, 'State:', state.value);
+  }, [state]);
 
   const loadExistingApplication = async (uuid) => {
     try {
@@ -397,12 +561,19 @@ function LoanApplication() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8">
-      <div className="max-w-4xl mx-auto px-4">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">FinX</h1>
-          <p className="text-xl text-gray-600">Customer Loan Application</p>
-        </div>
+    <div className="min-h-screen bg-gray-100">
+      <TopPanel />
+      <div className="flex min-h-screen bg-gray-50">
+        <LeftPanel 
+          activeItem={activeMenuItem} 
+          onItemClick={handleTabNavigation}
+          disabled={!navigationEnabled}
+        />
+        <div className="flex-1 p-8">
+            <div className="max-w-4xl mx-auto">
+              <div className="text-left mb-8">
+                <p className="text-2xl font-semibold" style={{ color: '#33297A' }}>Customer Loan Application</p>
+              </div>
 
         {state.matches("starting") && (
           <div className="bg-white rounded-lg shadow-md p-8 text-center">
@@ -516,6 +687,8 @@ function LoanApplication() {
             </div>
           </div>
         )}
+          </div>
+        </div>
       </div>
     </div>
   );
