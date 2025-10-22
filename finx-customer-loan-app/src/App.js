@@ -332,7 +332,7 @@ async function loginAndGetToken() {
 
 function FormRenderer({ onUpdate, onSubmit, formId }) {
   return (
-    <div className="mx-auto bg-white p-6 rounded-xl shadow-md form-container">
+    <div className="bg-white rounded-lg shadow-lg p-6 form-container">
       <Form
         src={`${process.env.REACT_APP_FORMIO_API_BASE_URL}/form/${formId}`}
         options={{ readOnly: false, noAlerts: true, template: "bootstrap3" }}
@@ -430,7 +430,7 @@ function LeftPanel({ activeItem, onItemClick, disabled = false }) {
   ];
 
   return (
-    <div className="w-72 bg-white rounded-lg shadow-lg mx-4 my-4 min-h-screen">
+    <div className="w-72 rounded-lg shadow-lg mx-4 my-8 min-h-screen" style={{ backgroundColor: '#F9FAFB' }}>
       <div className="p-6">
         <nav className="space-y-1">
           {menuItems.map((item) => (
@@ -575,138 +575,174 @@ function LoanApplication() {
 
   const handleUpdate = (data) => send({ type: "FORM_UPDATE", data });
   const handleSubmit = (data) => {
-    console.log("Submitting data:", data);
+    console.log("termsAccepted", data);
     send({ type: "FORM_UPDATE", data });
     send({ type: "FORM_SUBMIT" });
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-white">
       <TopPanel />
-      <div className="flex min-h-screen bg-gray-50">
+      <div className="flex min-h-screen bg-white">
         <LeftPanel 
           activeItem={activeMenuItem} 
           onItemClick={handleTabNavigation}
           disabled={!navigationEnabled}
         />
-        <div className="flex-1 p-8">
-            <div className="max-w-4xl mx-auto">
+        <div className="flex-1">
+          <div className="max-w-4xl mx-auto">
+            <div className="bg-white rounded-lg shadow-lg p-8 my-8" style={{ backgroundColor: '#F9FAFB' }}>
               <div className="text-left mb-8">
                 <p className="text-2xl font-semibold" style={{ color: '#33297A' }}>Customer Loan Application</p>
               </div>
 
-        {state.matches("starting") && (
-          <div className="bg-white rounded-lg shadow-md p-8 text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading...</p>
-          </div>
-        )}
-        {state.matches("polling") && (
-          <div className="bg-white rounded-lg shadow-md p-8 text-center">
-            <div className="animate-pulse h-4 bg-gray-200 rounded mb-4"></div>
-            <p className="text-gray-600">Waiting for next UI task...</p>
-          </div>
-        )}
-        {state.matches("waitForPoll") && (
-          <div className="p-6 bg-green-50 border border-green-200 rounded-lg text-center">
-            <div className="text-green-600 text-4xl mb-4">✅</div>
-            <h2 className="text-2xl font-bold text-green-800 mb-2">
-              Thank You for Your Application!
-            </h2>
-            <p className="text-green-700 mb-4">
-              We have received your loan application and it is now being
-              processed.
-            </p>
-            <p className="text-green-600">
-              We will get back to you soon with an update on your application
-              status.
-            </p>
-          </div>
-        )}
-        {state.matches("rendering") && (
-          <>
-            <FormRenderer
-              onUpdate={handleUpdate}
-              onSubmit={handleSubmit}
-              formId={currentTask?.inputData?.form_id}
+              {state.matches("starting") && (
+                <div className="bg-white rounded-lg shadow-lg p-8 text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+                  <p className="text-gray-600">Loading...</p>
+                </div>
+              )}
+              {state.matches("polling") && (
+                <div className="bg-white rounded-lg shadow-lg p-8 text-center">
+                  <div className="animate-pulse h-4 bg-gray-200 rounded mb-4"></div>
+                  <p className="text-gray-600">Waiting for next UI task...</p>
+                </div>
+              )}
+              {state.matches("waitForPoll") && (
+             <div className="bg-gray-50 min-h-screen flex flex-col items-center pt-8">
+  <div className="w-full max-w-4xl px-6">
+    <div className="bg-white rounded-lg shadow p-10 text-center">
+      <div className="flex justify-center mb-4">
+        <div className="bg-green-100 rounded-full p-3">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-7 w-7 text-green-500"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path
+              fillRule="evenodd"
+              d="M16.707 5.293a1 1 0 010 1.414l-7.39 7.39a1 1 0 01-1.414 0l-3.293-3.293a1 1 0 011.414-1.414l2.586 2.586 6.683-6.683a1 1 0 011.414 0z"
+              clipRule="evenodd"
             />
-            {/* {currentTask?.inputData?.ui_component === "PersonalInfoForm" && (
-              <PersonalInfoForm
-                onUpdate={handleUpdate}
-                onSubmit={handleSubmit}
-                formData={formData}
-              />
-            )}
-            {currentTask?.inputData?.ui_component === "FinancialInfoForm" && (
-              <FinancialInfoForm
-                onUpdate={handleUpdate}
-                onSubmit={handleSubmit}
-              />
-            )}
-            {currentTask?.inputData?.ui_component === "EmploymentInfoForm" && (
-              <EmploymentInfoForm
-                onUpdate={handleUpdate}
-                onSubmit={handleSubmit}
-              />
-            )}
-            {currentTask?.inputData?.ui_component === "AdditionalInfoForm" && (
-              <AdditionalInfoForm
-                onUpdate={handleUpdate}
-                onSubmit={handleSubmit}
-              />
-            )}
-            {currentTask?.inputData?.ui_component === "ReviewSubmitScreen" && (
-              <ReviewComponent formData={formData} onSubmit={handleSubmit} />
-            )} */}
-          </>
-        )}
+          </svg>
+        </div>
+      </div>
+      <h3 className="text-xl font-semibold text-gray-800 mb-2">
+        Thank you for your Application!
+      </h3>
+      <p className="text-gray-600 mb-1">
+        We have received your loan application and it is now being processed.
+      </p>
+      <p className="text-gray-600">
+        We will get back to you soon with an update on your application status.
+      </p>
+    </div>
+  </div>
+</div>
+              )}
+              {state.matches("rendering") && (
+                <>
+                  <FormRenderer
+                    onUpdate={handleUpdate}
+                    onSubmit={handleSubmit}
+                    formId={currentTask?.inputData?.form_id}
+                  />
+                  {/* {currentTask?.inputData?.ui_component === "PersonalInfoForm" && (
+                    <PersonalInfoForm
+                      onUpdate={handleUpdate}
+                      onSubmit={handleSubmit}
+                      formData={formData}
+                    />
+                  )}
+                  {currentTask?.inputData?.ui_component === "FinancialInfoForm" && (
+                    <FinancialInfoForm
+                      onUpdate={handleUpdate}
+                      onSubmit={handleSubmit}
+                    />
+                  )}
+                  {currentTask?.inputData?.ui_component === "EmploymentInfoForm" && (
+                    <EmploymentInfoForm
+                      onUpdate={handleUpdate}
+                      onSubmit={handleSubmit}
+                    />
+                  )}
+                  {currentTask?.inputData?.ui_component === "AdditionalInfoForm" && (
+                    <AdditionalInfoForm
+                      onUpdate={handleUpdate}
+                      onSubmit={handleSubmit}
+                    />
+                  )}
+                  {currentTask?.inputData?.ui_component === "ReviewSubmitScreen" && (
+                    <ReviewComponent formData={formData} onSubmit={handleSubmit} />
+                  )} */}
+                </>
+              )}
 
-        {state.matches("validating") && (
-          <div className="bg-white rounded-lg shadow-md p-8 text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Validating...</p>
-          </div>
-        )}
-        {state.matches("submitting") && (
-          <div className="bg-white rounded-lg shadow-md p-8 text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Submitting task...</p>
-          </div>
-        )}
-        {state.matches("completed") && (
-          <div className="p-6 bg-green-50 border border-green-200 rounded-lg text-center">
-            <div className="text-green-600 text-4xl mb-4">✅</div>
-            <h2 className="text-2xl font-bold text-green-800 mb-2">
-              Thank You for Your Application!
-            </h2>
-            <p className="text-green-700 mb-4">
-              We have received your loan application and it is now being
-              processed.
-            </p>
-            <p className="text-green-600">
-              We will get back to you soon with an update on your application
-              status.
-            </p>
-          </div>
-        )}
+              {state.matches("validating") && (
+                <div className="bg-white rounded-lg shadow-lg p-8 text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+                  <p className="text-gray-600">Validating...</p>
+                </div>
+              )}
+              {state.matches("submitting") && (
+                <div className="bg-white rounded-lg shadow-lg p-8 text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+                  <p className="text-gray-600">Submitting task...</p>
+                </div>
+              )}
+              {state.matches("completed") && (
+              <div className="bg-gray-50 min-h-screen flex flex-col items-center pt-8">
+  <div className="w-full max-w-4xl px-6">
+    <div className="bg-white rounded-lg shadow p-10 text-center">
+      <div className="flex justify-center mb-4">
+        <div className="bg-green-100 rounded-full p-3">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-7 w-7 text-green-500"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path
+              fillRule="evenodd"
+              d="M16.707 5.293a1 1 0 010 1.414l-7.39 7.39a1 1 0 01-1.414 0l-3.293-3.293a1 1 0 011.414-1.414l2.586 2.586 6.683-6.683a1 1 0 011.414 0z"
+              clipRule="evenodd"
+            />
+          </svg>
+        </div>
+      </div>
+      <h3 className="text-xl font-semibold text-gray-800 mb-2">
+        Thank you for your Application!
+      </h3>
+      <p className="text-gray-600 mb-1">
+        We have received your loan application and it is now being processed.
+      </p>
+      <p className="text-gray-600">
+        We will get back to you soon with an update on your application status.
+      </p>
+    </div>
+  </div>
+</div>
+              )}
 
-        {state.matches("error") && (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <div className="flex items-center mb-3">
-                <div className="text-red-500 text-xl mr-2">⚠️</div>
-                <h3 className="text-lg font-semibold text-red-800">Error</h3>
-              </div>
-              <p className="text-red-700 mb-4">{String(error)}</p>
-              <button
-                onClick={() => send({ type: "RETRY" })}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
-              >
-                Retry
-              </button>
+              {state.matches("error") && (
+                <div className="bg-white rounded-lg shadow-lg p-6">
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <div className="flex items-center mb-3">
+                      <div className="text-red-500 text-xl mr-2">⚠️</div>
+                      <h3 className="text-lg font-semibold text-red-800">Error</h3>
+                    </div>
+                    <p className="text-red-700 mb-4">{String(error)}</p>
+                    <button
+                      onClick={() => send({ type: "RETRY" })}
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
+                    >
+                      Retry
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
-        )}
           </div>
         </div>
       </div>
