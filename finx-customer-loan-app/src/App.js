@@ -403,10 +403,30 @@ function TopPanel() {
 
 function LeftPanel({ activeItem, onItemClick, disabled = false }) {
   const menuItems = [
-    { id: 'home', label: 'Home', icon: '/Home.png' },
-    { id: 'personal', label: 'Personal Information', icon: '/Personalwhite.png' },
-    { id: 'finance', label: 'Finance Information', icon: '/Finacial.png' },
-    { id: 'employment', label: 'Employment Information', icon: '/Employment.png' }
+    { 
+      id: 'home', 
+      label: 'Home', 
+      icon: '/Home.png',
+      activeIcon: '/homewhite.png'
+    },
+    { 
+      id: 'personal', 
+      label: 'Personal Information', 
+      icon: '/Personal.png',
+      activeIcon: '/Personalwhite.png'
+    },
+    { 
+      id: 'finance', 
+      label: 'Finance Information', 
+      icon: '/Finacial.png',
+      activeIcon: '/FinancialWite.png'
+    },
+    { 
+      id: 'employment', 
+      label: 'Employment Information', 
+      icon: '/Employment.png',
+      activeIcon: '/EmploymentWhite.png'
+    }
   ];
 
   return (
@@ -428,7 +448,7 @@ function LeftPanel({ activeItem, onItemClick, disabled = false }) {
               style={activeItem === item.id ? { backgroundColor: '#33297A' } : {}}
             >
               <img 
-                src={item.icon} 
+                src={activeItem === item.id ? item.activeIcon : item.icon} 
                 alt={item.label} 
                 className="w-5 h-5 mr-3"
                 onError={(e) => {
