@@ -304,8 +304,12 @@ function TaskQueueView({ taskQueue, onProcessNext, onRefresh }) {
      <h2 className="text-2xl font-semibold" style={{ fontWeight: 600, fontSize: '24px', color: '#33297A' }}>New Loan Application</h2>
     <button
       onClick={onRefresh}
-      className="bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-md border border-gray-300 transition"
-      style={{ fontWeight: 500, fontSize: '16px', color: '#858484' }}
+      className={`px-3 py-1 rounded-md border transition ${
+        taskQueue.length > 0 
+          ? 'bg-white border-[#33297A] text-[#33297A] hover:bg-gray-50' 
+          : 'bg-gray-100 border-gray-300 text-gray-400'
+      }`}
+      style={{ fontWeight: 500, fontSize: '16px' }}
     >
       Refresh
     </button>
@@ -588,7 +592,7 @@ function LeftSidebar({ currentTask, taskQueue, currentState }) {
   const currentActiveTab = getActiveTab();
 
   return (
-    <div className="w-64 rounded-xl shadow border border-gray-100 p-4 my-8" style={{ backgroundColor: '#F9FAFB' }}>
+    <div className="w-64 rounded-xl shadow border border-gray-100 p-4 my-8 ml-4" style={{ backgroundColor: '#F9FAFB' }}>
       <nav className="space-y-2 pt-4">
         {tabs.map((tab) => (
           <div
