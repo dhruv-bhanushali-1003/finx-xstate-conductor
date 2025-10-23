@@ -355,7 +355,7 @@ function TaskQueueView({ taskQueue, onProcessNext, onRefresh }) {
 
          <div>
            <h3 className="font-medium text-gray-900 mb-1">
-             <span style={{ backgroundColor: index === 0 ? '#DBEAFE' : 'transparent', padding: '2px 6px', borderRadius: '4px' }}>
+             <span style={{ backgroundColor: '#DBEAFE', padding: '2px 6px', borderRadius: '4px' }}>
                #{index + 1}
              </span> Review Application
            </h3>
