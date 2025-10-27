@@ -349,14 +349,6 @@ function TaskQueueView({ taskQueue, onProcessNext, onRefresh }) {
      >
       {/* Left side (radio + details) */}
       <div className="flex items-start space-x-3">
-        <input
-          type="radio"
-          name="selectedTask"
-          value={task.taskId}
-          onChange={() => setSelectedTask(task.taskId)}
-          className="mt-1 h-4 w-4 text-[#33297A] focus:ring-[#33297A]"
-        />
-
          <div>
            <h3 className="font-medium text-gray-900 mb-1">
              <span style={{ backgroundColor: '#DBEAFE', padding: '2px 6px', borderRadius: '4px' }}>
