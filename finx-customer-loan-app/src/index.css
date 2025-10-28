@@ -28,7 +28,6 @@
 .formio-form .formio-component .form-group,
 .formio-form .formio-component > .formio-component-content {
   margin-bottom: 0 !important;
-  height : 3rem
 }
 
 
@@ -40,7 +39,7 @@
 
 
 .formio-form .formio-component:not(.formio-component-button) {
-  margin-bottom: 0.5rem !important; 
+  margin-bottom: 0.5 !important; 
 }
 
 
@@ -65,6 +64,13 @@
   box-sizing: border-box !important;
 }
 
+/* Textarea specific - allow height to grow */
+.formio-form .formio-component textarea {
+  height: auto !important;
+  min-height: 2rem !important;
+  resize: vertical !important;
+}
+
 .formio-form .formio-component input:focus,
 .formio-form .formio-component textarea:focus,
 .formio-form .formio-component select:focus {
@@ -73,36 +79,51 @@
 }
 
 /* === CHOICES.JS SELECT STYLING === */
+/* Reduce spacing for select components */
+.formio-form .formio-component-select > label.control-label {
+  margin-top: 0.1rem !important;
+  margin-bottom: 0.1rem !important;
+ 
+}
+
+.formio-form .formio-component-select {
+  margin-bottom: 0.25rem !important;
+  height: 3rem;
+}
+
 .formio-form .formio-component-select .choices,
 .formio-form .formio-component-select .choices__inner {
   position: relative !important;
   width: 100% !important;
-  min-height: 2.75rem !important;
-  height: 2.75rem !important;
+  min-height: 2rem !important;
+  height: auto !important;
   border: 1px solid #d1d5db !important;
-  border-radius: 0.5rem !important;
+  border-radius: 0.375rem !important;
   background: #fff !important;
   padding: 0 !important;
   box-shadow: none !important;
+  margin-bottom: 0 !important;
 }
 
 .formio-form .formio-component-select .choices__list--single {
   display: flex !important;
   align-items: center !important;
-  height: 2.75rem !important;
-  padding-left: 1rem !important;
-  padding-right: 2.5rem !important;
+  min-height: 2rem !important;
+  height: auto !important;
+  padding-left: 0.75rem !important;
+  padding-right: 2rem !important;
   background: transparent !important;
 }
 
 /* Text + placeholder styling */
 .formio-form .formio-component-select .choices__list--single .choices__item {
-  font-size: 1rem !important;
+  font-size: 0.9rem !important;
   color: #111827 !important;
 }
 .formio-form .formio-component-select .choices__list--single .choices__placeholder {
   color: #6b7280 !important;
   opacity: 1 !important;
+  font-size: 0.9rem !important;
 }
 
 
@@ -118,8 +139,8 @@
 .formio-form .formio-component-select
   .choices__list--dropdown .choices__item--selectable {
   text-align: left !important;
-  padding: 0.625rem 1rem !important;
-  font-size: 0.95rem !important;
+  padding: 0.5rem 0.75rem !important;
+  font-size: 0.9rem !important;
 }
 
 /* Focus ring for selects */
@@ -131,17 +152,18 @@
 /* === BUTTONS === */
 .formio-form .btn {
   width: 40% !important;
-  height: 2.75rem !important;
-  padding: 0.75rem 1.5rem !important;
-  font-size: 1rem !important;
+  min-height: 2rem !important;
+  height: auto !important;
+  padding: 0.5rem 1rem !important;
+  font-size: 0.9rem !important;
   font-weight: 600 !important;
-  border-radius: 0.5rem !important;
+  border-radius: 0.375rem !important;
   background-color: #33297a !important;
   color: white !important;
   border: none !important;
   transition: all 0.2s ease-in-out !important;
   cursor: pointer !important;
-  margin: 1rem auto !important;
+  margin: 0.75rem auto !important;
   display: block !important;
 }
 
@@ -168,38 +190,45 @@
   max-width: 100% !important;
 }
 
-/* Form.io Component Container - Ensure proper width */
+/* Form.io Component Container - Ensure proper width and flexible height */
 .formio-form .formio-component .formio-component {
   width: 100% !important;
   max-width: 100% !important;
 }
 
-/* === GENERAL === *//* Form.io Checkbox - Align with text on same line */
+/* === GENERAL === */
+/* Form.io Checkbox - Align with text on same line */
 .formio-form .formio-component input[type="checkbox"] {
   width: auto !important;
   height: auto !important;
   margin-right: 0.5rem !important;
   display: inline-block !important;
-  vertical-align: middle !important;
+  vertical-align: baseline !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  padding: 0 !important;
 }
 
 .formio-form .formio-component .formio-checkbox {
   display: flex !important;
-  align-items: center !important;
+  align-items: baseline !important;
   flex-direction: row !important;
+  margin-top: 0.25rem !important;
 }
 
 .formio-form .formio-component .formio-checkbox label {
   display: flex !important;
-  align-items: center !important;
+  align-items: baseline !important;
   margin-bottom: 0 !important;
   cursor: pointer !important;
+  line-height: 1.5 !important;
 }
 
 .formio-form .formio-component .formio-checkbox .formio-checkbox-wrapper {
   display: flex !important;
-  align-items: center !important;
+  align-items: baseline !important;
   flex-direction: row !important;
+  gap: 0.5rem !important;
 }
 input[type="text"],
 input[type="email"],
@@ -212,6 +241,7 @@ input[type="password"],
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
   background: rgba(255, 255, 255, 0.9) !important;
   border-radius: 0.5rem !important;
+  margin-bottom: 1rem !important;
 }
 
 input::placeholder {
@@ -236,3 +266,184 @@ input::placeholder {
   display: none !important;
   visibility: hidden !important;
 }
+
+/* ✅ Universal label styling for Email, Phone, Password, and Textfield */
+.formio-component-email > label.control-label,
+.formio-component-phoneNumber > label.control-label,
+.formio-component-password > label.control-label,
+.formio-component-textfield > label.control-label,
+.formio-form label.control-label,
+.formio-form label.field-required {
+  display: block !important;
+  position: relative !important;
+  margin-top: 0.25rem !important;     /* minimal spacing from previous input */
+  margin-bottom: 0.2rem !important;  /* minimal space before input field */
+  font-weight: 500 !important;
+  font-size: 0.8rem !important;
+  line-height: 1.2 !important;
+  color: #374151 !important;          /* subtle dark gray for label text */
+  text-align: left !important;
+}
+
+/* ✅ Handle required field asterisk alignment */
+.formio-form label.control-label.field-required::after {
+  content: " *";
+  color: #ef4444 !important;          /* red for required indicator */
+  font-weight: 600 !important;
+  vertical-align: middle !important;
+  font-size: 0.9rem !important;
+}
+
+/* ✅ Ensure top spacing works even if inline style is applied */
+.formio-component-email > label.control-label[style],
+.formio-component-phoneNumber > label.control-label[style],
+.formio-component-password > label.control-label[style],
+.formio-component-textfield > label.control-label[style],
+.formio-form label.control-label[style],
+.formio-form label.field-required[style] {
+  margin-top: 0.25rem !important;
+  margin-bottom: 0.25rem !important;
+  line-height: 1.2 !important;
+}
+
+/* ✅ For the first field in the form — minimal top margin */
+.formio-form > .formio-component:first-of-type > label.control-label {
+  margin-top: 0.1rem !important;
+}
+
+
+
+/* Label spacing (same across fields) */
+.formio-form .formio-component-day > label.control-label {
+  display: block !important;
+  font-weight: 500 !important;
+  font-size: 0.8rem !important;
+  color: #374151 !important;
+  margin-top: 0.1rem !important;
+  margin-bottom: 0.1rem !important;
+}
+
+/* Handle both Bootstrap grid and non-grid renderers */
+.formio-form .formio-component-day [ref="element"],
+.formio-form .formio-component-day .row {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  gap: 8px !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.formio-form .formio-component-day [ref="element"] > *,
+.formio-form .formio-component-day .row > * {
+  flex: 0 0 auto !important;
+  max-width: none !important;
+  padding-right: 0 !important;
+  padding-top: 0 !important;      /* ✅ No top padding */
+  margin-top: 0 !important;       /* ✅ No top margin */
+  align-items: flex-start !important;
+}
+
+
+/* Order: Month(1) Day(2) Year(3) -> 25% / 25% / 50%  */
+.formio-form .formio-component-day [ref="element"] > *:nth-child(1),
+.formio-form .formio-component-day .row > *:nth-child(1) { width: 25% !important; }
+.formio-form .formio-component-day [ref="element"] > *:nth-child(2),
+.formio-form .formio-component-day .row > *:nth-child(2) { width: 25% !important; }
+.formio-form .formio-component-day [ref="element"] > *:nth-child(3),
+.formio-form .formio-component-day .row > *:nth-child(3) { width: 50% !important; }
+
+/* Remove sub-group bottom gaps that break alignment */
+.formio-form .formio-component-day .form-group { 
+  margin-bottom: 0 !important; 
+  margin-top: 0 !important;
+  padding-bottom: 0 !important;
+  padding-top: 0 !important;
+}
+
+/* Day component container spacing */
+.formio-form .formio-component-day {
+  margin-bottom: 0 !important;
+}
+
+/* Stack on narrow screens */
+@media (max-width: 640px) {
+  .formio-form .formio-component-day [ref="element"],
+  .formio-form .formio-component-day .row {
+    flex-wrap: wrap !important;
+  }
+  .formio-form .formio-component-day [ref="element"] > *,
+  .formio-form .formio-component-day .row > * {
+    width: 100% !important;
+  }
+}
+
+/* =========================
+   FILE (Dropzone + table)
+   ========================= */
+
+/* Label spacing */
+.formio-form .formio-component-file > label.control-label {
+  margin-top: 0.1rem !important;
+  margin-bottom: 0.1rem !important;
+  font-weight: 500 !important;
+  font-size: 0.8rem !important;
+  color: #374151 !important;
+}
+
+/* Header row style (File Name | Size) */
+.formio-form .formio-component-file table.table thead th,
+.formio-form .formio-component-file .file-list-header th {
+  background: #f8fafc !important;
+  color: #374151 !important;
+  font-weight: 600 !important;
+  border: 1px solid #e5e7eb !important;
+  padding: 8px 12px !important;
+}
+
+/* Table full width & tidy spacing */
+.formio-form .formio-component-file table.table,
+.formio-form .formio-component-file .file-list {
+  width: 100% !important;
+  border-collapse: collapse !important;
+  margin-bottom: 2px !important;
+}
+
+/* Dropzone block, full width, dashed border */
+.formio-form .formio-component-file .dropzone,
+.formio-form .formio-component-file .dz-default.dz-message,
+.formio-form .formio-component-file [ref="fileDropzone"] {
+  display: flex !important;
+  align-items: center !important;
+  min-height: 1.5rem !important;
+  height: auto !important;
+  padding: 2px !important;
+  border: 1px dashed #cbd5e1 !important;
+  border-radius: 6px !important;
+  background: #fff !important;
+  color: #374151 !important;
+  margin: 0 0 1px 0 !important;
+  position: relative !important;
+  z-index: 2 !important;  /* above nav */
+}
+
+/* Keep wizard nav / Next button below dropzone */
+.formio-wizard-nav-container,
+.formio-form .formio-component-button {
+  position: relative !important;
+  clear: both !important;
+  margin-top: 2px !important;
+  z-index: 1 !important; /* lower than dropzone */
+}
+
+/* Kill stray margins inside the file area */
+.formio-form .formio-component-file .choices,
+.formio-form .formio-component-file .choices__inner,
+.formio-form .formio-component-file .choices__list--single {
+  margin: 0 !important;
+}
+
+/* File component container spacing */
+.formio-form .formio-component-file {
+  margin-bottom: 0 !important;
+}
+
