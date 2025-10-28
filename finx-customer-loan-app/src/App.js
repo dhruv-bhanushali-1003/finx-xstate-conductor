@@ -348,7 +348,7 @@ function FormRenderer({ onUpdate, onSubmit, formId }) {
     preloadUsernames();
   }, []);
   return (
-    <div className="mx-auto bg-white p-6 rounded-xl shadow-md form-container">
+    <div className="bg-white rounded-lg shadow-lg p-6 form-container">
       <Form
         src={`${process.env.REACT_APP_FORMIO_API_BASE_URL}/form/${formId}`}
         submission={{ data: preloadedData }}
@@ -362,11 +362,174 @@ function FormRenderer({ onUpdate, onSubmit, formId }) {
   );
 }
 
+// -------------------- Panel Components --------------------
+function TopPanel() {
+  return (
+    <div className="text-white px-6 py-4 flex items-center justify-between w-full relative z-10" style={{ backgroundColor: '#33297A' }}>
+      <div className="flex items-center">
+        <img 
+          src="/finxlogo.png" 
+          alt="FinX Logo" 
+          className="h-12 w-auto mr-4"
+          onError={(e) => {
+            console.log('Image failed to load:', e.target.src);
+            e.target.style.display = 'none';
+          }}
+        />
+      </div>
+      <div className="flex items-center space-x-4">    
+        <div className="flex items-center space-x-4">
+          {/* Search Icon */}
+          <div className="w-10 h-10 flex items-center justify-center cursor-pointer">
+            <img 
+              src="/search.png" 
+              alt="Search" 
+              className="w-6 h-6 brightness-150"
+              onError={(e) => {
+                e.target.style.display = 'none';
+              }}
+            />
+          </div>
+          {/* Notification Icon */}
+          <div className="w-10 h-10 flex items-center justify-center cursor-pointer">
+            <img 
+              src="/notification.png" 
+              alt="Notifications" 
+              className="w-6 h-6 brightness-150"
+              onError={(e) => {
+                e.target.style.display = 'none';
+              }}
+            />
+          </div>
+          {/* Profile Icon */}
+          <div className="w-10 h-10 flex items-center justify-center cursor-pointer">
+            <img 
+              src="/Profile.png" 
+              alt="Profile" 
+              className="w-8 h-8 rounded-full brightness-150"
+              onError={(e) => {
+                e.target.style.display = 'none';
+              }}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LeftPanel({ activeItem, onItemClick, disabled = false }) {
+  const menuItems = [
+    { 
+      id: 'home', 
+      label: 'Home', 
+      icon: '/Home.png',
+      activeIcon: '/homewhite.png'
+    },
+    { 
+      id: 'personal', 
+      label: 'Personal Information', 
+      icon: '/Personal.png',
+      activeIcon: '/Personalwhite.png'
+    },
+    { 
+      id: 'finance', 
+      label: 'Finance Information', 
+      icon: '/Finacial.png',
+      activeIcon: '/FinancialWite.png'
+    },
+    { 
+      id: 'employment', 
+      label: 'Employment Information', 
+      icon: '/Employment.png',
+      activeIcon: '/EmploymentWhite.png'
+    }
+  ];
+
+  return (
+    <div className="w-72 rounded-lg shadow-lg mx-4 my-8 min-h-screen" style={{ backgroundColor: '#F9FAFB' }}>
+      <div className="p-6">
+        <nav className="space-y-1">
+          {menuItems.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => onItemClick && onItemClick(item.id)}
+              disabled={disabled}
+              className={`w-full flex items-center px-4 py-3 text-left rounded-lg transition-colors ${
+                activeItem === item.id
+                  ? 'text-white'
+                  : disabled
+                  ? 'text-gray-400 cursor-not-allowed'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+              style={activeItem === item.id ? { backgroundColor: '#33297A' } : {}}
+            >
+              <img 
+                src={activeItem === item.id ? item.activeIcon : item.icon} 
+                alt={item.label} 
+                className="w-5 h-5 mr-3"
+                onError={(e) => {
+                  console.log('Icon failed to load:', e.target.src);
+                  e.target.style.display = 'none';
+                }}
+              />
+              <span className="font-medium">{item.label}</span>
+            </button>
+          ))}
+        </nav>
+      </div>
+    </div>
+  );
+}
+
 // -------------------- Main App --------------------
 function LoanApplication() {
   const [state, send] = useMachine(loanMachine);
   const { currentTask, formData, error } = state.context;
   const [token, setToken] = useState(null);
+  const [activeMenuItem, setActiveMenuItem] = useState('personal');
+  const [navigationEnabled, setNavigationEnabled] = useState(false);
+
+  // Map Form.io components to menu items
+  const getMenuItemFromForm = (uiComponent, formId) => {
+    const componentMap = {
+      'PersonalInfoForm': 'personal',
+      'FinancialInfoForm': 'finance', 
+      'EmploymentInfoForm': 'employment',
+    };
+    
+    // If we have a UI component, use that
+    if (uiComponent && componentMap[uiComponent]) {
+      return componentMap[uiComponent];
+    }
+    
+    // Fallback: try to determine from form ID patterns
+    if (formId) {
+      const formIdLower = formId.toLowerCase();
+      if (formIdLower.includes('personal') || formIdLower.includes('personalinfo')) {
+        return 'personal';
+      } else if (formIdLower.includes('financial') || formIdLower.includes('finance')) {
+        return 'finance';
+      } else if (formIdLower.includes('employment') || formIdLower.includes('employ')) {
+        return 'employment';
+      }
+    }
+    
+    return 'personal'; // default fallback
+  };
+
+  // Handle tab navigation
+  const handleTabNavigation = (menuItemId) => {
+    if (!navigationEnabled) {
+      console.log('Navigation disabled during workflow');
+      return;
+    }   
+    // Only allow navigation if we're in a stable state
+    if (!state.matches("rendering") && !state.matches("idle")) {
+      console.log('Cannot navigate during workflow processing');
+      return;
+    }
+  };
 
   useEffect(() => {
     loginAndGetToken().then(setToken);
@@ -380,6 +543,27 @@ function LoanApplication() {
       send({ type: "START" });
     }
   }, [send]);
+
+  // Update active menu item when current task changes
+  useEffect(() => {
+    console.log(currentTask,formData,"currentTask")
+    if (currentTask?.inputData) {
+      const menuItem = getMenuItemFromForm(
+        currentTask.inputData.ui_component, 
+        currentTask.inputData.form_id
+      );
+      setActiveMenuItem(menuItem);
+      console.log('Updated active menu item to:', menuItem, 'for component:', currentTask.inputData.ui_component, 'formId:', currentTask.inputData.form_id);
+    }
+  }, [currentTask]);
+
+  // Enable/disable navigation based on workflow state
+  useEffect(() => {
+    // Enable navigation only when rendering forms (not during loading, validation, etc.)
+    const isNavigationEnabled = state.matches("rendering") || state.matches("idle");
+    setNavigationEnabled(isNavigationEnabled);
+    console.log('Navigation enabled:', isNavigationEnabled, 'State:', state.value);
+  }, [state]);
 
   const loadExistingApplication = async (uuid) => {
     try {
@@ -408,131 +592,176 @@ function LoanApplication() {
 
   const handleUpdate = (data) => send({ type: "FORM_UPDATE", data });
   const handleSubmit = (data) => {
-    console.log("Submitting data:", data);
+    console.log("termsAccepted", data);
     send({ type: "FORM_UPDATE", data });
     send({ type: "FORM_SUBMIT" });
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8">
-      <div className="max-w-4xl mx-auto px-4">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">FinX</h1>
-          <p className="text-xl text-gray-600">Customer Loan Application</p>
-        </div>
-
-        {state.matches("starting") && (
-          <div className="bg-white rounded-lg shadow-md p-8 text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading...</p>
-          </div>
-        )}
-        {state.matches("polling") && (
-          <div className="bg-white rounded-lg shadow-md p-8 text-center">
-            <div className="animate-pulse h-4 bg-gray-200 rounded mb-4"></div>
-            <p className="text-gray-600">Waiting for next UI task...</p>
-          </div>
-        )}
-        {state.matches("waitForPoll") && (
-          <div className="p-6 bg-green-50 border border-green-200 rounded-lg text-center">
-            <div className="text-green-600 text-4xl mb-4">✅</div>
-            <h2 className="text-2xl font-bold text-green-800 mb-2">
-              Thank You for Your Application!
-            </h2>
-            <p className="text-green-700 mb-4">
-              We have received your loan application and it is now being
-              processed.
-            </p>
-            <p className="text-green-600">
-              We will get back to you soon with an update on your application
-              status.
-            </p>
-          </div>
-        )}
-        {state.matches("rendering") && (
-          <>
-            <FormRenderer
-              onUpdate={handleUpdate}
-              onSubmit={handleSubmit}
-              formId={currentTask?.inputData?.form_id}
-            />
-            {/* {currentTask?.inputData?.ui_component === "PersonalInfoForm" && (
-              <PersonalInfoForm
-                onUpdate={handleUpdate}
-                onSubmit={handleSubmit}
-                formData={formData}
-              />
-            )}
-            {currentTask?.inputData?.ui_component === "FinancialInfoForm" && (
-              <FinancialInfoForm
-                onUpdate={handleUpdate}
-                onSubmit={handleSubmit}
-              />
-            )}
-            {currentTask?.inputData?.ui_component === "EmploymentInfoForm" && (
-              <EmploymentInfoForm
-                onUpdate={handleUpdate}
-                onSubmit={handleSubmit}
-              />
-            )}
-            {currentTask?.inputData?.ui_component === "AdditionalInfoForm" && (
-              <AdditionalInfoForm
-                onUpdate={handleUpdate}
-                onSubmit={handleSubmit}
-              />
-            )}
-            {currentTask?.inputData?.ui_component === "ReviewSubmitScreen" && (
-              <ReviewComponent formData={formData} onSubmit={handleSubmit} />
-            )} */}
-          </>
-        )}
-
-        {state.matches("validating") && (
-          <div className="bg-white rounded-lg shadow-md p-8 text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Validating...</p>
-          </div>
-        )}
-        {state.matches("submitting") && (
-          <div className="bg-white rounded-lg shadow-md p-8 text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Submitting task...</p>
-          </div>
-        )}
-        {state.matches("completed") && (
-          <div className="p-6 bg-green-50 border border-green-200 rounded-lg text-center">
-            <div className="text-green-600 text-4xl mb-4">✅</div>
-            <h2 className="text-2xl font-bold text-green-800 mb-2">
-              Thank You for Your Application!
-            </h2>
-            <p className="text-green-700 mb-4">
-              We have received your loan application and it is now being
-              processed.
-            </p>
-            <p className="text-green-600">
-              We will get back to you soon with an update on your application
-              status.
-            </p>
-          </div>
-        )}
-
-        {state.matches("error") && (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <div className="flex items-center mb-3">
-                <div className="text-red-500 text-xl mr-2">⚠️</div>
-                <h3 className="text-lg font-semibold text-red-800">Error</h3>
+    <div className="min-h-screen bg-white">
+      <TopPanel />
+      <div className="flex min-h-screen bg-white">
+        <LeftPanel 
+          activeItem={activeMenuItem} 
+          onItemClick={handleTabNavigation}
+          disabled={!navigationEnabled}
+        />
+        <div className="flex-1">
+          <div className="max-w-4xl mx-auto">
+            <div className="bg-white rounded-lg shadow-lg p-8 my-8" style={{ backgroundColor: '#F9FAFB' }}>
+              <div className="text-left mb-8">
+                <p className="text-2xl font-semibold" style={{ color: '#33297A' }}>Customer Loan Application</p>
               </div>
-              <p className="text-red-700 mb-4">{String(error)}</p>
-              <button
-                onClick={() => send({ type: "RETRY" })}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
-              >
-                Retry
-              </button>
+
+              {state.matches("starting") && (
+                <div className="bg-white rounded-lg shadow-lg p-8 text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+                  <p className="text-gray-600">Loading...</p>
+                </div>
+              )}
+              {state.matches("polling") && (
+                <div className="bg-white rounded-lg shadow-lg p-8 text-center">
+                  <div className="animate-pulse h-4 bg-gray-200 rounded mb-4"></div>
+                  <p className="text-gray-600">Waiting for next UI task...</p>
+                </div>
+              )}
+              {state.matches("waitForPoll") && (
+             <div className="bg-gray-50 min-h-screen flex flex-col items-center pt-8">
+  <div className="w-full max-w-4xl px-6">
+    <div className="bg-white rounded-lg shadow p-10 text-center">
+      <div className="flex justify-center mb-4">
+        <div className="bg-green-100 rounded-full p-3">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-7 w-7 text-green-500"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path
+              fillRule="evenodd"
+              d="M16.707 5.293a1 1 0 010 1.414l-7.39 7.39a1 1 0 01-1.414 0l-3.293-3.293a1 1 0 011.414-1.414l2.586 2.586 6.683-6.683a1 1 0 011.414 0z"
+              clipRule="evenodd"
+            />
+          </svg>
+        </div>
+      </div>
+      <h3 className="text-xl font-semibold text-gray-800 mb-2">
+        Thank you for your Application!
+      </h3>
+      <p className="text-gray-600 mb-1">
+        We have received your loan application and it is now being processed.
+      </p>
+      <p className="text-gray-600">
+        We will get back to you soon with an update on your application status.
+      </p>
+    </div>
+  </div>
+</div>
+              )}
+              {state.matches("rendering") && (
+                <>
+                  <FormRenderer
+                    onUpdate={handleUpdate}
+                    onSubmit={handleSubmit}
+                    formId={currentTask?.inputData?.form_id}
+                  />
+                  {/* {currentTask?.inputData?.ui_component === "PersonalInfoForm" && (
+                    <PersonalInfoForm
+                      onUpdate={handleUpdate}
+                      onSubmit={handleSubmit}
+                      formData={formData}
+                    />
+                  )}
+                  {currentTask?.inputData?.ui_component === "FinancialInfoForm" && (
+                    <FinancialInfoForm
+                      onUpdate={handleUpdate}
+                      onSubmit={handleSubmit}
+                    />
+                  )}
+                  {currentTask?.inputData?.ui_component === "EmploymentInfoForm" && (
+                    <EmploymentInfoForm
+                      onUpdate={handleUpdate}
+                      onSubmit={handleSubmit}
+                    />
+                  )}
+                  {currentTask?.inputData?.ui_component === "AdditionalInfoForm" && (
+                    <AdditionalInfoForm
+                      onUpdate={handleUpdate}
+                      onSubmit={handleSubmit}
+                    />
+                  )}
+                  {currentTask?.inputData?.ui_component === "ReviewSubmitScreen" && (
+                    <ReviewComponent formData={formData} onSubmit={handleSubmit} />
+                  )} */}
+                </>
+              )}
+
+              {state.matches("validating") && (
+                <div className="bg-white rounded-lg shadow-lg p-8 text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+                  <p className="text-gray-600">Validating...</p>
+                </div>
+              )}
+              {state.matches("submitting") && (
+                <div className="bg-white rounded-lg shadow-lg p-8 text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+                  <p className="text-gray-600">Submitting task...</p>
+                </div>
+              )}
+              {state.matches("completed") && (
+              <div className="bg-gray-50 min-h-screen flex flex-col items-center pt-8">
+  <div className="w-full max-w-4xl px-6">
+    <div className="bg-white rounded-lg shadow p-10 text-center">
+      <div className="flex justify-center mb-4">
+        <div className="bg-green-100 rounded-full p-3">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-7 w-7 text-green-500"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path
+              fillRule="evenodd"
+              d="M16.707 5.293a1 1 0 010 1.414l-7.39 7.39a1 1 0 01-1.414 0l-3.293-3.293a1 1 0 011.414-1.414l2.586 2.586 6.683-6.683a1 1 0 011.414 0z"
+              clipRule="evenodd"
+            />
+          </svg>
+        </div>
+      </div>
+      <h3 className="text-xl font-semibold text-gray-800 mb-2">
+        Thank you for your Application!
+      </h3>
+      <p className="text-gray-600 mb-1">
+        We have received your loan application and it is now being processed.
+      </p>
+      <p className="text-gray-600">
+        We will get back to you soon with an update on your application status.
+      </p>
+    </div>
+  </div>
+</div>
+              )}
+
+              {state.matches("error") && (
+                <div className="bg-white rounded-lg shadow-lg p-6">
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <div className="flex items-center mb-3">
+                      <div className="text-red-500 text-xl mr-2">⚠️</div>
+                      <h3 className="text-lg font-semibold text-red-800">Error</h3>
+                    </div>
+                    <p className="text-red-700 mb-4">{String(error)}</p>
+                    <button
+                      onClick={() => send({ type: "RETRY" })}
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
+                    >
+                      Retry
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

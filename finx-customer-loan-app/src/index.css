@@ -50,7 +50,6 @@
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
 }
 
-/* Form.io Labels */
 .formio-form .formio-component label {
   font-weight: 500 !important;
   color: #374151 !important;
@@ -61,28 +60,36 @@
 
 /* Form.io Buttons - Match the design */
 .formio-form .btn {
-  width: 100% !important;
+  width: 40% !important;
   height: 2.75rem !important;
   padding: 0.75rem 1.5rem !important;
   font-size: 1rem !important;
   font-weight: 600 !important;
   border-radius: 0.5rem !important;
-  background-color: #6b7280 !important;
+  background-color: #33297A !important;
   color: white !important;
   border: none !important;
   outline: none !important;
   transition: all 0.2s ease-in-out !important;
   cursor: pointer !important;
-  margin-top: 1rem !important;
+  margin: 1rem auto !important;
+  display: block !important;
 }
 
 .formio-form .btn:hover {
-  background-color: #4b5563 !important;
+  background-color: #2a1f5c !important;
 }
 
 .formio-form .btn:focus {
   outline: none !important;
-  box-shadow: 0 0 0 3px rgba(107, 114, 128, 0.1) !important;
+  box-shadow: 0 0 0 3px rgba(51, 41, 122, 0.1) !important;
+}
+
+.formio-form .btn:disabled {
+  background-color: rgba(51, 41, 122, 0.4) !important;
+  color: rgba(255, 255, 255, 0.7) !important;
+  cursor: not-allowed !important;
+  opacity: 0.6 !important;
 }
 
 /* Form.io Input Wrapper - Ensure full width */
@@ -151,6 +158,52 @@
   min-height: 4rem !important;  /* Controls actual height */
   height: 4rem !important;
 }
+
+/* Left align with padding for Form.io select component selected values and placeholder */
+.formio-form .formio-component-select .choices__list--single .choices__item--single,
+.formio-form .formio-component-select .choices__list--single .choices__placeholder {
+  text-align: left !important;
+  padding-left: 1rem !important;
+  padding-top: 0.75rem !important;
+  padding-bottom: 0.75rem !important;
+}
+
+/* Ensure selected value text has proper left padding */
+.formio-form .formio-component-select .choices__list--single .choices__item--single .choices__item--choice {
+  padding-left: 1rem !important;
+}
+
+/* Target the specific text content within selected values */
+.formio-form .formio-component-select .choices__list--single .choices__item--single span,
+.formio-form .formio-component-select .choices__list--single .choices__item--single div {
+  padding-left: 1rem !important;
+}
+
+/* Force left and top padding on the choices container */
+.formio-form .formio-component-select .choices__list--single {
+  padding-left: 1rem !important;
+  padding-top: 0.75rem !important;
+  padding-bottom: 0.75rem !important;
+}
+
+/* Target all possible text elements in selected values */
+.formio-form .formio-component-select .choices__list--single * {
+  padding-left: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+/* Keep dropdown options left-aligned (revert center alignment) */
+.formio-form .formio-component-select .choices__list--dropdown .choices__item--selectable {
+  text-align: left !important;
+  padding-left: 1rem !important;
+}
+
+/* Fix span text in selected values */
+.formio-form .formio-component-select .choices__list--single .choices__item--single span {
+  text-align: left !important;
+  padding-left: 0 !important;
+}
 /* Add border to the Choices.js rendered dropdown */
 .choices__list--single {
   border: 1px solid #ced4da; /* Bootstrap default border color */
@@ -163,4 +216,46 @@
 .choices__list--single.is-focused {
   border-color: #80bdff;
   box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+}
+.formio-component-htmlelement h2 {
+  color: #020817;   
+    /* text color */
+  font-size: 1.5rem;    /* ~24px */
+  font-weight: 600;     /* semi-bold */
+  margin-bottom: 1rem;  /* spacing below */
+}
+
+/* Ensure success message content is left-aligned */
+.bg-white.rounded-lg.shadow-lg {
+  text-align: left !important;
+}
+
+/* Force input shadow effect - Target input elements */
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+input[type="number"],
+input[type="password"],
+.formio-component input,
+.formio-form input,
+.formio-component .formio-input,
+.formio-form .formio-input {
+  border: 1px solid #E2E8F0 !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Placeholder text styling */
+input::placeholder {
+  text-shadow: none !important;
+  font-weight: 500 !important;
+  font-style: normal !important;
+  color: #4A5976 !important;
+}
+
+/* Alternative approach - Enhanced input styling */
+.formio-component input,
+.formio-form input {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border: 2px solid #e5e7eb !important;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06) !important;
 }

@@ -169,3 +169,11 @@
   background: transparent !important;
   box-shadow: none !important; /* remove any shadow */
 }
+
+.formio-component-htmlelement h2 {
+  color: #006e74;   
+    /* text color */
+  font-size: 1.5rem;    /* ~24px */
+  font-weight: 600;     /* semi-bold */
+  margin-bottom: 1rem;  /* spacing below */
+}
