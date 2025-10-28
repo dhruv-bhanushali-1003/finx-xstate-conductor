@@ -331,10 +331,27 @@ async function loginAndGetToken() {
 // -------------------- Forms --------------------
 
 function FormRenderer({ onUpdate, onSubmit, formId }) {
+  const [preloadedData, setPreloadedData] = useState(null);
+  useEffect(() => {
+    async function preloadUsernames() {
+      try {
+        const res = await fetch('https://jsonplaceholder.typicode.com/users');
+        const json = await res.json();
+        const usernames = json.map(u => u.username);
+        setPreloadedData({ validUsernames: usernames });
+      } catch (err) {
+        console.error('Failed to preload usernames:', err);
+        setPreloadedData({ validUsernames: [] });
+      }
+    }
+
+    preloadUsernames();
+  }, []);
   return (
     <div className="mx-auto bg-white p-6 rounded-xl shadow-md form-container">
       <Form
         src={`${process.env.REACT_APP_FORMIO_API_BASE_URL}/form/${formId}`}
+        submission={{ data: preloadedData }}
         options={{ readOnly: false, noAlerts: true, template: "bootstrap3" }}
         onSubmit={(submission) => {
           onUpdate(submission.data);
