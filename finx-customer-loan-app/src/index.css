@@ -88,7 +88,7 @@
 
 .formio-form .formio-component-select {
   margin-bottom: 0.25rem !important;
-  height: 3rem;
+  max-height: 3.5rem;
 }
 
 .formio-form .formio-component-select .choices,
