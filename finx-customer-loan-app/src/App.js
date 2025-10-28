@@ -609,25 +609,19 @@ function LoanApplication() {
                 </div>
               )}
               {state.matches("waitForPoll") && (
-             <div className="bg-gray-50 min-h-screen flex flex-col items-center pt-8">
+   <div className="bg-gray-50 min-h-screen flex flex-col items-center pt-8">
   <div className="w-full max-w-4xl px-6">
     <div className="bg-white rounded-lg shadow p-10 text-center">
       <div className="flex justify-center mb-4">
-        <div className="bg-green-100 rounded-full p-3">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-7 w-7 text-green-500"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-          >
-            <path
-              fillRule="evenodd"
-              d="M16.707 5.293a1 1 0 010 1.414l-7.39 7.39a1 1 0 01-1.414 0l-3.293-3.293a1 1 0 011.414-1.414l2.586 2.586 6.683-6.683a1 1 0 011.414 0z"
-              clipRule="evenodd"
-            />
-          </svg>
+        <div >
+          <img
+            src="/success.png" 
+            alt="Success Icon"
+            className="h-8 w-8"
+          />
         </div>
       </div>
+
       <h3 className="text-xl font-semibold text-gray-800 mb-2">
         Thank you for your Application!
       </h3>
@@ -640,6 +634,7 @@ function LoanApplication() {
     </div>
   </div>
 </div>
+
               )}
               {state.matches("rendering") && (
                 <>
@@ -692,25 +687,19 @@ function LoanApplication() {
                 </div>
               )}
               {state.matches("completed") && (
-              <div className="bg-gray-50 min-h-screen flex flex-col items-center pt-8">
+   <div className="bg-gray-50 min-h-screen flex flex-col items-center pt-8">
   <div className="w-full max-w-4xl px-6">
     <div className="bg-white rounded-lg shadow p-10 text-center">
       <div className="flex justify-center mb-4">
-        <div className="bg-green-100 rounded-full p-3">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-7 w-7 text-green-500"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-          >
-            <path
-              fillRule="evenodd"
-              d="M16.707 5.293a1 1 0 010 1.414l-7.39 7.39a1 1 0 01-1.414 0l-3.293-3.293a1 1 0 011.414-1.414l2.586 2.586 6.683-6.683a1 1 0 011.414 0z"
-              clipRule="evenodd"
-            />
-          </svg>
+        <div >
+          <img
+            src="/success.png" 
+            alt="Success Icon"
+            className="h-8 w-8"
+          />
         </div>
       </div>
+
       <h3 className="text-xl font-semibold text-gray-800 mb-2">
         Thank you for your Application!
       </h3>

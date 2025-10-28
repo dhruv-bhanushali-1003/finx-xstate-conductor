@@ -703,8 +703,15 @@ function LoanApplication() {
             </div>
           )}
           {state.matches("taskCompleted") && (
-       <div className="p-6 border border-gray-200 rounded-lg text-center bg-white">
-  <div className="text-4xl mb-4 text-green-600">✅</div>
+  <div className="p-6 border border-gray-200 rounded-lg text-center bg-white">
+  <div className="flex justify-center mb-4">
+    <img
+      src="/success.png" 
+      alt="Success Icon"
+      className="h-12 w-12"
+    />
+  </div>
+
   <h2 className="text-2xl font-bold mb-2" style={{ color: '#33297A' }}>
     Task Completed Successfully!
   </h2>
@@ -712,6 +719,7 @@ function LoanApplication() {
     Your review has been submitted.
   </p>
 </div>
+
 
           )}
 
