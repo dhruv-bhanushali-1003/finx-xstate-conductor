@@ -1,6 +1,6 @@
 // src/App.js
 import React from "react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { setup, assign, fromPromise } from "xstate";
 import { useMachine } from "@xstate/react";
@@ -310,19 +310,22 @@ export const loanMachine = setup({
 });
 
 async function loginAndGetToken() {
-  const response = await fetch(`${process.env.REACT_APP_FORMIO_API_BASE_URL}/user/login`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    body: JSON.stringify({
-      data: {
-        email: process.env.REACT_APP_FORMIO_LOGIN_EMAIL,
-        password: process.env.REACT_APP_FORMIO_LOGIN_PASSWORD,
+  const response = await fetch(
+    `${process.env.REACT_APP_FORMIO_API_BASE_URL}/user/login`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
       },
-    }),
-  });
+      body: JSON.stringify({
+        data: {
+          email: process.env.REACT_APP_FORMIO_LOGIN_EMAIL,
+          password: process.env.REACT_APP_FORMIO_LOGIN_PASSWORD,
+        },
+      }),
+    }
+  );
 
   const token = response.headers.get("x-jwt-token");
   Formio.setToken(token);
@@ -331,33 +334,106 @@ async function loginAndGetToken() {
 // -------------------- Forms --------------------
 
 function FormRenderer({ onUpdate, onSubmit, formId }) {
+  const formRef = useRef();
   const [preloadedData, setPreloadedData] = useState(null);
+  const [errorMessage, setErrorMessage] = useState(null);
+
   useEffect(() => {
     async function preloadUsernames() {
       try {
-        const res = await fetch('https://jsonplaceholder.typicode.com/users');
+        const res = await fetch("https://jsonplaceholder.typicode.com/users");
         const json = await res.json();
-        const usernames = json.map(u => u.username);
+        const usernames = json.map((u) => u.username);
         setPreloadedData({ validUsernames: usernames });
       } catch (err) {
-        console.error('Failed to preload usernames:', err);
+        console.error("Failed to preload usernames:", err);
         setPreloadedData({ validUsernames: [] });
       }
     }
 
     preloadUsernames();
   }, []);
+
+  const handleFormioSubmission = async (submission) => {
+    try {
+      console.log("Form submission received:", submission);
+
+      // 1️⃣ Send submission data to your webhook manually
+      const webhookResponse = await axios.post(
+        "https://finx-codegen-api-dev.fincuro.in/validator/validate/request",
+        submission.data,
+        {
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+
+      if (webhookResponse.status !== 200) {
+        throw new Error(webhookResponse.data?.message || "Validation failed");
+      }
+
+      const token = Formio.getToken();
+
+      // 2️⃣ If webhook passed, record submission in Form.io
+      const saveResponse = await axios.post(
+        `${process.env.REACT_APP_FORMIO_API_BASE_URL}/form/${formId}/submission`,
+        submission,
+        {
+          headers: { "Content-Type": "application/json", "x-jwt-token": token },
+        }
+      );
+
+      if (saveResponse.status < 200 || saveResponse.status >= 300) {
+        throw new Error(
+          saveResponse.data?.message || "Failed to save submission"
+        );
+      }
+
+      // 3️⃣ Success — clear errors and invoke parent callbacks
+      setErrorMessage(null);
+      onUpdate(submission.data);
+      onSubmit(submission.data);
+    } catch (err) {
+      console.error("Submission error:", err);
+
+      // Axios error handling
+      const message =
+        err.response?.data?.message ||
+        err.message ||
+        "Unknown submission error";
+
+      setErrorMessage(message);
+    }
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-lg p-6 form-container">
       <Form
+        ref={formRef}
         src={`${process.env.REACT_APP_FORMIO_API_BASE_URL}/form/${formId}`}
         submission={{ data: preloadedData }}
-        options={{ readOnly: false, noAlerts: true, template: "bootstrap3" }}
+        options={{
+          readOnly: false,
+          noAlerts: true,
+          template: "bootstrap3",
+          submit: false,
+        }}
         onSubmit={(submission) => {
           onUpdate(submission.data);
           onSubmit(submission.data);
+          console.log("Form submission:", submission);
+        }}
+        onCustomEvent={(event) => {
+          if (event.type === "validateAndSubmit") {
+            const submission = formRef.current.props.submission;
+            handleFormioSubmission(submission);
+          }
         }}
       />
+      {errorMessage && (
+        <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+          ❌ {errorMessage}
+        </div>
+      )}
     </div>
   );
 }
@@ -365,50 +441,53 @@ function FormRenderer({ onUpdate, onSubmit, formId }) {
 // -------------------- Panel Components --------------------
 function TopPanel() {
   return (
-    <div className="text-white px-6 py-4 flex items-center justify-between w-full relative z-10" style={{ backgroundColor: '#33297A' }}>
+    <div
+      className="text-white px-6 py-4 flex items-center justify-between w-full relative z-10"
+      style={{ backgroundColor: "#33297A" }}
+    >
       <div className="flex items-center">
-        <img 
-          src="/finxlogo.png" 
-          alt="FinX Logo" 
+        <img
+          src="/finxlogo.png"
+          alt="FinX Logo"
           className="h-12 w-auto mr-4"
           onError={(e) => {
-            console.log('Image failed to load:', e.target.src);
-            e.target.style.display = 'none';
+            console.log("Image failed to load:", e.target.src);
+            e.target.style.display = "none";
           }}
         />
       </div>
-      <div className="flex items-center space-x-4">    
+      <div className="flex items-center space-x-4">
         <div className="flex items-center space-x-4">
           {/* Search Icon */}
           <div className="w-10 h-10 flex items-center justify-center cursor-pointer">
-            <img 
-              src="/search.png" 
-              alt="Search" 
+            <img
+              src="/search.png"
+              alt="Search"
               className="w-6 h-6 brightness-150"
               onError={(e) => {
-                e.target.style.display = 'none';
+                e.target.style.display = "none";
               }}
             />
           </div>
           {/* Notification Icon */}
           <div className="w-10 h-10 flex items-center justify-center cursor-pointer">
-            <img 
-              src="/notification.png" 
-              alt="Notifications" 
+            <img
+              src="/notification.png"
+              alt="Notifications"
               className="w-6 h-6 brightness-150"
               onError={(e) => {
-                e.target.style.display = 'none';
+                e.target.style.display = "none";
               }}
             />
           </div>
           {/* Profile Icon */}
           <div className="w-10 h-10 flex items-center justify-center cursor-pointer">
-            <img 
-              src="/Profile.png" 
-              alt="Profile" 
+            <img
+              src="/Profile.png"
+              alt="Profile"
               className="w-8 h-8 rounded-full brightness-150"
               onError={(e) => {
-                e.target.style.display = 'none';
+                e.target.style.display = "none";
               }}
             />
           </div>
@@ -420,34 +499,37 @@ function TopPanel() {
 
 function LeftPanel({ activeItem, onItemClick, disabled = false }) {
   const menuItems = [
-    { 
-      id: 'home', 
-      label: 'Home', 
-      icon: '/Home.png',
-      activeIcon: '/homewhite.png'
+    {
+      id: "home",
+      label: "Home",
+      icon: "/Home.png",
+      activeIcon: "/homewhite.png",
     },
-    { 
-      id: 'personal', 
-      label: 'Personal Information', 
-      icon: '/Personal.png',
-      activeIcon: '/Personalwhite.png'
+    {
+      id: "personal",
+      label: "Personal Information",
+      icon: "/Personal.png",
+      activeIcon: "/Personalwhite.png",
     },
-    { 
-      id: 'finance', 
-      label: 'Finance Information', 
-      icon: '/Finacial.png',
-      activeIcon: '/FinancialWite.png'
+    {
+      id: "finance",
+      label: "Finance Information",
+      icon: "/Finacial.png",
+      activeIcon: "/FinancialWite.png",
     },
-    { 
-      id: 'employment', 
-      label: 'Employment Information', 
-      icon: '/Employment.png',
-      activeIcon: '/EmploymentWhite.png'
-    }
+    {
+      id: "employment",
+      label: "Employment Information",
+      icon: "/Employment.png",
+      activeIcon: "/EmploymentWhite.png",
+    },
   ];
 
   return (
-    <div className="w-72 rounded-lg shadow-lg mx-4 my-8 min-h-screen" style={{ backgroundColor: '#F9FAFB' }}>
+    <div
+      className="w-72 rounded-lg shadow-lg mx-4 my-8 min-h-screen"
+      style={{ backgroundColor: "#F9FAFB" }}
+    >
       <div className="p-6">
         <nav className="space-y-1">
           {menuItems.map((item) => (
@@ -457,20 +539,22 @@ function LeftPanel({ activeItem, onItemClick, disabled = false }) {
               disabled={disabled}
               className={`w-full flex items-center px-4 py-3 text-left rounded-lg transition-colors ${
                 activeItem === item.id
-                  ? 'text-white'
+                  ? "text-white"
                   : disabled
-                  ? 'text-gray-400 cursor-not-allowed'
-                  : 'text-gray-600 hover:bg-gray-100'
+                  ? "text-gray-400 cursor-not-allowed"
+                  : "text-gray-600 hover:bg-gray-100"
               }`}
-              style={activeItem === item.id ? { backgroundColor: '#33297A' } : {}}
+              style={
+                activeItem === item.id ? { backgroundColor: "#33297A" } : {}
+              }
             >
-              <img 
-                src={activeItem === item.id ? item.activeIcon : item.icon} 
-                alt={item.label} 
+              <img
+                src={activeItem === item.id ? item.activeIcon : item.icon}
+                alt={item.label}
                 className="w-5 h-5 mr-3"
                 onError={(e) => {
-                  console.log('Icon failed to load:', e.target.src);
-                  e.target.style.display = 'none';
+                  console.log("Icon failed to load:", e.target.src);
+                  e.target.style.display = "none";
                 }}
               />
               <span className="font-medium">{item.label}</span>
@@ -487,46 +571,55 @@ function LoanApplication() {
   const [state, send] = useMachine(loanMachine);
   const { currentTask, formData, error } = state.context;
   const [token, setToken] = useState(null);
-  const [activeMenuItem, setActiveMenuItem] = useState('personal');
+  const [activeMenuItem, setActiveMenuItem] = useState("personal");
   const [navigationEnabled, setNavigationEnabled] = useState(false);
 
   // Map Form.io components to menu items
   const getMenuItemFromForm = (uiComponent, formId) => {
     const componentMap = {
-      'PersonalInfoForm': 'personal',
-      'FinancialInfoForm': 'finance', 
-      'EmploymentInfoForm': 'employment',
+      PersonalInfoForm: "personal",
+      FinancialInfoForm: "finance",
+      EmploymentInfoForm: "employment",
     };
-    
+
     // If we have a UI component, use that
     if (uiComponent && componentMap[uiComponent]) {
       return componentMap[uiComponent];
     }
-    
+
     // Fallback: try to determine from form ID patterns
     if (formId) {
       const formIdLower = formId.toLowerCase();
-      if (formIdLower.includes('personal') || formIdLower.includes('personalinfo')) {
-        return 'personal';
-      } else if (formIdLower.includes('financial') || formIdLower.includes('finance')) {
-        return 'finance';
-      } else if (formIdLower.includes('employment') || formIdLower.includes('employ')) {
-        return 'employment';
+      if (
+        formIdLower.includes("personal") ||
+        formIdLower.includes("personalinfo")
+      ) {
+        return "personal";
+      } else if (
+        formIdLower.includes("financial") ||
+        formIdLower.includes("finance")
+      ) {
+        return "finance";
+      } else if (
+        formIdLower.includes("employment") ||
+        formIdLower.includes("employ")
+      ) {
+        return "employment";
       }
     }
-    
-    return 'personal'; // default fallback
+
+    return "personal"; // default fallback
   };
 
   // Handle tab navigation
   const handleTabNavigation = (menuItemId) => {
     if (!navigationEnabled) {
-      console.log('Navigation disabled during workflow');
+      console.log("Navigation disabled during workflow");
       return;
-    }   
+    }
     // Only allow navigation if we're in a stable state
     if (!state.matches("rendering") && !state.matches("idle")) {
-      console.log('Cannot navigate during workflow processing');
+      console.log("Cannot navigate during workflow processing");
       return;
     }
   };
@@ -546,23 +639,36 @@ function LoanApplication() {
 
   // Update active menu item when current task changes
   useEffect(() => {
-    console.log(currentTask,formData,"currentTask")
+    console.log(currentTask, formData, "currentTask");
     if (currentTask?.inputData) {
       const menuItem = getMenuItemFromForm(
-        currentTask.inputData.ui_component, 
+        currentTask.inputData.ui_component,
         currentTask.inputData.form_id
       );
       setActiveMenuItem(menuItem);
-      console.log('Updated active menu item to:', menuItem, 'for component:', currentTask.inputData.ui_component, 'formId:', currentTask.inputData.form_id);
+      console.log(
+        "Updated active menu item to:",
+        menuItem,
+        "for component:",
+        currentTask.inputData.ui_component,
+        "formId:",
+        currentTask.inputData.form_id
+      );
     }
   }, [currentTask]);
 
   // Enable/disable navigation based on workflow state
   useEffect(() => {
     // Enable navigation only when rendering forms (not during loading, validation, etc.)
-    const isNavigationEnabled = state.matches("rendering") || state.matches("idle");
+    const isNavigationEnabled =
+      state.matches("rendering") || state.matches("idle");
     setNavigationEnabled(isNavigationEnabled);
-    console.log('Navigation enabled:', isNavigationEnabled, 'State:', state.value);
+    console.log(
+      "Navigation enabled:",
+      isNavigationEnabled,
+      "State:",
+      state.value
+    );
   }, [state]);
 
   const loadExistingApplication = async (uuid) => {
@@ -601,16 +707,24 @@ function LoanApplication() {
     <div className="min-h-screen bg-white">
       <TopPanel />
       <div className="flex min-h-screen bg-white">
-        <LeftPanel 
-          activeItem={activeMenuItem} 
+        <LeftPanel
+          activeItem={activeMenuItem}
           onItemClick={handleTabNavigation}
           disabled={!navigationEnabled}
         />
         <div className="flex-1">
           <div className="max-w-4xl mx-auto">
-            <div className="bg-white rounded-lg shadow-lg p-8 my-8" style={{ backgroundColor: '#F9FAFB' }}>
+            <div
+              className="bg-white rounded-lg shadow-lg p-8 my-8"
+              style={{ backgroundColor: "#F9FAFB" }}
+            >
               <div className="text-left mb-8">
-                <p className="text-2xl font-semibold" style={{ color: '#33297A' }}>Customer Loan Application</p>
+                <p
+                  className="text-2xl font-semibold"
+                  style={{ color: "#33297A" }}
+                >
+                  Customer Loan Application
+                </p>
               </div>
 
               {state.matches("starting") && (
@@ -626,32 +740,33 @@ function LoanApplication() {
                 </div>
               )}
               {state.matches("waitForPoll") && (
-   <div className="bg-gray-50 min-h-screen flex flex-col items-center pt-8">
-  <div className="w-full max-w-4xl px-6">
-    <div className="bg-white rounded-lg shadow p-10 text-center">
-      <div className="flex justify-center mb-4">
-        <div >
-          <img
-            src="/success.png" 
-            alt="Success Icon"
-            className="h-8 w-8"
-          />
-        </div>
-      </div>
+                <div className="bg-gray-50 min-h-screen flex flex-col items-center pt-8">
+                  <div className="w-full max-w-4xl px-6">
+                    <div className="bg-white rounded-lg shadow p-10 text-center">
+                      <div className="flex justify-center mb-4">
+                        <div>
+                          <img
+                            src="/success.png"
+                            alt="Success Icon"
+                            className="h-8 w-8"
+                          />
+                        </div>
+                      </div>
 
-      <h3 className="text-xl font-semibold text-gray-800 mb-2">
-        Thank you for your Application!
-      </h3>
-      <p className="text-gray-600 mb-1">
-        We have received your loan application and it is now being processed.
-      </p>
-      <p className="text-gray-600">
-        We will get back to you soon with an update on your application status.
-      </p>
-    </div>
-  </div>
-</div>
-
+                      <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                        Thank you for your Application!
+                      </h3>
+                      <p className="text-gray-600 mb-1">
+                        We have received your loan application and it is now
+                        being processed.
+                      </p>
+                      <p className="text-gray-600">
+                        We will get back to you soon with an update on your
+                        application status.
+                      </p>
+                    </div>
+                  </div>
+                </div>
               )}
               {state.matches("rendering") && (
                 <>
@@ -704,31 +819,33 @@ function LoanApplication() {
                 </div>
               )}
               {state.matches("completed") && (
-   <div className="bg-gray-50 min-h-screen flex flex-col items-center pt-8">
-  <div className="w-full max-w-4xl px-6">
-    <div className="bg-white rounded-lg shadow p-10 text-center">
-      <div className="flex justify-center mb-4">
-        <div >
-          <img
-            src="/success.png" 
-            alt="Success Icon"
-            className="h-8 w-8"
-          />
-        </div>
-      </div>
+                <div className="bg-gray-50 min-h-screen flex flex-col items-center pt-8">
+                  <div className="w-full max-w-4xl px-6">
+                    <div className="bg-white rounded-lg shadow p-10 text-center">
+                      <div className="flex justify-center mb-4">
+                        <div>
+                          <img
+                            src="/success.png"
+                            alt="Success Icon"
+                            className="h-8 w-8"
+                          />
+                        </div>
+                      </div>
 
-      <h3 className="text-xl font-semibold text-gray-800 mb-2">
-        Thank you for your Application!
-      </h3>
-      <p className="text-gray-600 mb-1">
-        We have received your loan application and it is now being processed.
-      </p>
-      <p className="text-gray-600">
-        We will get back to you soon with an update on your application status.
-      </p>
-    </div>
-  </div>
-</div>
+                      <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                        Thank you for your Application!
+                      </h3>
+                      <p className="text-gray-600 mb-1">
+                        We have received your loan application and it is now
+                        being processed.
+                      </p>
+                      <p className="text-gray-600">
+                        We will get back to you soon with an update on your
+                        application status.
+                      </p>
+                    </div>
+                  </div>
+                </div>
               )}
 
               {state.matches("error") && (
@@ -736,7 +853,9 @@ function LoanApplication() {
                   <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                     <div className="flex items-center mb-3">
                       <div className="text-red-500 text-xl mr-2">⚠️</div>
-                      <h3 className="text-lg font-semibold text-red-800">Error</h3>
+                      <h3 className="text-lg font-semibold text-red-800">
+                        Error
+                      </h3>
                     </div>
                     <p className="text-red-700 mb-4">{String(error)}</p>
                     <button
