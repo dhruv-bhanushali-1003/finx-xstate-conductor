@@ -1,6 +1,6 @@
 // src/App.js
 import React from "react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import axios from "axios";
 import { setup, assign, fromPromise } from "xstate";
 import { useMachine } from "@xstate/react";
@@ -393,16 +393,23 @@ function FormRenderer({ onUpdate, onSubmit, formId }) {
       onUpdate(submission.data);
       onSubmit(submission.data);
     } catch (err) {
-      console.error("Submission error:", err);
+  console.error("Submission error:", err);
 
-      // Axios error handling
-      const message =
-        err.response?.data?.message ||
-        err.message ||
-        "Unknown submission error";
+  const message =
+    err.response?.data?.message ||
+    err.message ||
+    "Unknown submission error";
 
-      setErrorMessage(message);
-    }
+  setErrorMessage(message);
+console.log(formRef.current,"Error form ref");
+  // 🔥 Restore form data so fields don't reset
+  if (formRef.current?.formio?.setSubmission) {
+    console.log(true)
+    setTimeout(() => {
+      formRef.current.formio.setSubmission({ data: submission.data });
+    }, 0); // defer to next tick
+  }
+}
   };
 
   return (
@@ -410,7 +417,7 @@ function FormRenderer({ onUpdate, onSubmit, formId }) {
       <Form
         ref={formRef}
         src={`${process.env.REACT_APP_FORMIO_API_BASE_URL}/form/${formId}`}
-        submission={{ data: preloadedData }}
+        submission={useMemo(() => ({ data: preloadedData  }), [preloadedData])}
         options={{
           readOnly: false,
           noAlerts: true,
