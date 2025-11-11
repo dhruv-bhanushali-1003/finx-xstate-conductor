@@ -11,13 +11,43 @@ import { Formio } from "formiojs";
 
 Formio.setBaseUrl("http://3.110.81.211");
 
+async function getKeycloakToken() {
+  try {
+    const params = new URLSearchParams();
+    params.append("client_id", "workflow");
+    params.append("client_secret", "mo8jfcR73nZc11XkD0n7VjsYr9zEwOcy");
+    params.append("grant_type", "client_credentials");
+
+    const response = await axios.post(
+      "https://auth.fincuro.in/realms/Orkestr8/protocol/openid-connect/token",
+      params,
+      {
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      }
+    );
+
+    console.log("Token:", response.data.access_token);
+    return response.data.access_token;
+  } catch (err) {
+    console.error("Error getting token:", err.response?.data || err.message);
+  }
+}
+
 // -------------------- Conductor Service --------------------
 const ConductorService = {
   async startWorkflow(workflowName = "Fincuro Bank loan-application-process") {
     try {
+      const token = await getKeycloakToken();
       const res = await axios.post(
         `https://base-api.fincuro.in/gateway/ui-workflow/api/workflow`,
-        { name: workflowName }
+        { name: workflowName },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
       return { workflowId: res.data };
     } catch (err) {
@@ -29,8 +59,14 @@ const ConductorService = {
   async getApplicationByUUID(uuid) {
     try {
       console.log(uuid);
+      const token = await getKeycloakToken();
       const res = await axios.get(
-        `https://base-api.fincuro.in/gateway/ui-workflow/api/application-data/${uuid}`
+        `https://base-api.fincuro.in/gateway/ui-workflow/api/application-data/${uuid}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
       console.log(res.data);
       return res.data;
@@ -42,8 +78,14 @@ const ConductorService = {
 
   async getWorkflowStatus(workflowId) {
     try {
+      const token = await getKeycloakToken();
       const res = await axios.get(
-        `https://base-api.fincuro.in/gateway/ui-workflow/api/workflow/${workflowId}`
+        `https://base-api.fincuro.in/gateway/ui-workflow/api/workflow/${workflowId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
       return res.data;
     } catch (err) {
@@ -54,10 +96,16 @@ const ConductorService = {
 
   async pollForTask(taskType, workerId = "loan-ui-worker") {
     try {
+      const token = await getKeycloakToken();
       console.log("Polling for task:", taskType);
       const res = await axios.get(
         `https://base-api.fincuro.in/gateway/ui-workflow/api/tasks/poll/${taskType}`,
-        { params: { workerid: workerId } }
+        {
+          params: { workerid: workerId },
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
       if (!res.data || !res.data.taskType) return null;
       return res.data;
@@ -69,6 +117,7 @@ const ConductorService = {
 
   async completeTask(workflowInstanceId, taskId, outputData) {
     try {
+      const token = await getKeycloakToken();
       console.log("Completing task:", taskId, "with data:", outputData);
       const res = await axios.post(
         `https://base-api.fincuro.in/gateway/ui-workflow/api/tasks`,
@@ -77,6 +126,11 @@ const ConductorService = {
           workflowInstanceId,
           status: "COMPLETED",
           outputData,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
       );
       return res.data;
@@ -310,19 +364,22 @@ export const loanMachine = setup({
 });
 
 async function loginAndGetToken() {
-  const response = await fetch(`${process.env.REACT_APP_FORMIO_API_BASE_URL}/user/login`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    body: JSON.stringify({
-      data: {
-        email: process.env.REACT_APP_FORMIO_LOGIN_EMAIL,
-        password: process.env.REACT_APP_FORMIO_LOGIN_PASSWORD,
+  const response = await fetch(
+    `${process.env.REACT_APP_FORMIO_API_BASE_URL}/user/login`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
       },
-    }),
-  });
+      body: JSON.stringify({
+        data: {
+          email: process.env.REACT_APP_FORMIO_LOGIN_EMAIL,
+          password: process.env.REACT_APP_FORMIO_LOGIN_PASSWORD,
+        },
+      }),
+    }
+  );
 
   const token = response.headers.get("x-jwt-token");
   Formio.setToken(token);
@@ -335,12 +392,12 @@ function FormRenderer({ onUpdate, onSubmit, formId }) {
   useEffect(() => {
     async function preloadUsernames() {
       try {
-        const res = await fetch('https://jsonplaceholder.typicode.com/users');
+        const res = await fetch("https://jsonplaceholder.typicode.com/users");
         const json = await res.json();
-        const usernames = json.map(u => u.username);
+        const usernames = json.map((u) => u.username);
         setPreloadedData({ validUsernames: usernames });
       } catch (err) {
-        console.error('Failed to preload usernames:', err);
+        console.error("Failed to preload usernames:", err);
         setPreloadedData({ validUsernames: [] });
       }
     }

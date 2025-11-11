@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 // src/App.js
 import React from "react";
@@ -8,11 +8,44 @@ import { setup, assign, fromPromise } from "xstate";
 import { useMachine } from "@xstate/react";
 import { useForm } from "react-hook-form";
 
+async function getKeycloakToken() {
+  try {
+    const params = new URLSearchParams();
+    params.append("client_id", "workflow");
+    params.append("client_secret", "mo8jfcR73nZc11XkD0n7VjsYr9zEwOcy");
+    params.append("grant_type", "client_credentials");
+
+    const response = await axios.post(
+      "https://auth.fincuro.in/realms/Orkestr8/protocol/openid-connect/token",
+      params,
+      {
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      }
+    );
+
+    console.log("Token:", response.data.access_token);
+    return response.data.access_token;
+  } catch (err) {
+    console.error("Error getting token:", err.response?.data || err.message);
+  }
+}
+
 // -------------------- Conductor Service --------------------
 const ConductorService = {
   async startWorkflow(workflowName = "Fincuro Bank loan-application-process") {
     try {
-      const res = await axios.post(`https://base-api.fincuro.in/gateway/ui-workflow/api/workflow`, { name: workflowName });
+      const token = await getKeycloakToken();
+      const res = await axios.post(
+        `https://base-api.fincuro.in/gateway/ui-workflow/api/workflow`,
+        { name: workflowName },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       return { workflowId: res.data };
     } catch (err) {
       console.error("startWorkflow error:", err);
@@ -22,7 +55,15 @@ const ConductorService = {
 
   async getWorkflowStatus(workflowId) {
     try {
-      const res = await axios.get(`https://base-api.fincuro.in/gateway/ui-workflow/api/workflow/${workflowId}`);
+      const token = await getKeycloakToken();
+      const res = await axios.get(
+        `https://base-api.fincuro.in/gateway/ui-workflow/api/workflow/${workflowId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       return res.data;
     } catch (err) {
       console.error("getWorkflowStatus error:", err);
@@ -32,9 +73,15 @@ const ConductorService = {
 
   async pollForTask(taskType, workerId = "loan-ui-worker") {
     try {
+      const token = await getKeycloakToken();
       console.log("Polling for task:", taskType);
       const res = await axios.get(
-        `https://base-api.fincuro.in/gateway/ui-workflow/api/tasks/poll/${taskType}?workerid=${workerId}`
+        `https://base-api.fincuro.in/gateway/ui-workflow/api/tasks/poll/${taskType}?workerid=${workerId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
       if (!res.data || !res.data.taskType) return null;
       return res.data;
@@ -46,13 +93,22 @@ const ConductorService = {
 
   async completeTask(workflowInstanceId, taskId, outputData) {
     try {
+      const token = await getKeycloakToken();
       console.log("Completing task:", taskId, "with data:", outputData);
-      const res = await axios.post(`https://base-api.fincuro.in/gateway/ui-workflow/api/tasks`, {
-        taskId,
-        workflowInstanceId,
-        status: "COMPLETED",
-        outputData,
-      });
+      const res = await axios.post(
+        `https://base-api.fincuro.in/gateway/ui-workflow/api/tasks`,
+        {
+          taskId,
+          workflowInstanceId,
+          status: "COMPLETED",
+          outputData,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       return res.data;
     } catch (err) {
       console.error("completeTask error:", err);
@@ -62,8 +118,16 @@ const ConductorService = {
 
   async searchWorkflows(workflowType) {
     try {
+      const token = await getKeycloakToken();
       const res = await axios.get(
-        `https://base-api.fincuro.in/gateway/ui-workflow/api/workflow/search?start=0&size=15&sort=startTime%3ADESC&freeText=%2A&workflowType=${encodeURIComponent(workflowType)}`
+        `https://base-api.fincuro.in/gateway/ui-workflow/api/workflow/search?start=0&size=15&sort=startTime%3ADESC&freeText=%2A&workflowType=${encodeURIComponent(
+          workflowType
+        )}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
       return res.data.results || [];
     } catch (err) {
@@ -74,34 +138,44 @@ const ConductorService = {
 
   async getAllPendingTasks() {
     try {
-      const workflows = await this.searchWorkflows("Fincuro Bank loan-application-process");
+      const workflows = await this.searchWorkflows(
+        "Fincuro Bank loan-application-process"
+      );
       const pendingTasks = [];
 
       for (const workflow of workflows) {
         if (workflow.status === "RUNNING") {
-          const workflowDetails = await this.getWorkflowStatus(workflow.workflowId);
+          const workflowDetails = await this.getWorkflowStatus(
+            workflow.workflowId
+          );
           const uiTasks = workflowDetails.tasks.filter(
             (t) =>
               t.status === "SCHEDULED" &&
               (t.inputData?.ui_component === "BankReviewInfoScreen" ||
                 t.inputData?.ui_component === "BankApprovalScreen")
           );
-          
-          uiTasks.forEach(task => {
+
+          uiTasks.forEach((task) => {
             pendingTasks.push({
               workflowId: workflow.workflowId,
               taskId: task.taskId,
               taskType: task.taskDefName,
               uiComponent: task.inputData?.ui_component,
-              customerData: task.inputData?.data || task.inputData?.additionalData || task.inputData?.initialData || {},
+              customerData:
+                task.inputData?.data ||
+                task.inputData?.additionalData ||
+                task.inputData?.initialData ||
+                {},
               createdTime: workflow.createTime,
-              status: task.status
+              status: task.status,
             });
           });
         }
       }
-      
-      return pendingTasks.sort((a, b) => new Date(a.createdTime) - new Date(b.createdTime));
+
+      return pendingTasks.sort(
+        (a, b) => new Date(a.createdTime) - new Date(b.createdTime)
+      );
     } catch (err) {
       console.error("getAllPendingTasks error:", err);
       return [];
@@ -300,7 +374,9 @@ function TaskQueueView({ taskQueue, onProcessNext, onRefresh }) {
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
       <div className="flex justify-between items-center mb-6 border-b pb-3">
-        <h2 className="text-2xl font-bold text-gray-800">New loan applications</h2>
+        <h2 className="text-2xl font-bold text-gray-800">
+          New loan applications
+        </h2>
         <button
           onClick={onRefresh}
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
@@ -308,7 +384,7 @@ function TaskQueueView({ taskQueue, onProcessNext, onRefresh }) {
           Refresh
         </button>
       </div>
-      
+
       {taskQueue.length === 0 ? (
         <div className="text-center py-8">
           <div className="text-gray-400 text-4xl mb-4">📋</div>
@@ -318,13 +394,16 @@ function TaskQueueView({ taskQueue, onProcessNext, onRefresh }) {
         <>
           <div className="mb-4">
             <p className="text-sm text-gray-600">
-              {taskQueue.length} task{taskQueue.length !== 1 ? 's' : ''} pending
+              {taskQueue.length} task{taskQueue.length !== 1 ? "s" : ""} pending
             </p>
           </div>
-          
+
           <div className="space-y-3 mb-6">
             {taskQueue.map((task, index) => (
-              <div key={task.taskId} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+              <div
+                key={task.taskId}
+                className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50"
+              >
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <div className="flex items-center space-x-2 mb-2">
@@ -332,20 +411,39 @@ function TaskQueueView({ taskQueue, onProcessNext, onRefresh }) {
                         #{index + 1}
                       </span>
                       <span className="font-medium text-gray-900">
-                        {task.uiComponent === 'BankReviewInfoScreen' ? 'Review Application' : 'Approval Decision'}
+                        {task.uiComponent === "BankReviewInfoScreen"
+                          ? "Review Application"
+                          : "Approval Decision"}
                       </span>
                     </div>
                     <div className="text-sm text-gray-600 space-y-1">
-                      <p><strong>Customer:</strong> {`${task.customerData.firstName} ${task.customerData.lastName}` || 'N/A'}</p>
-                      <p><strong>Email:</strong> {task.customerData.email || 'N/A'}</p>
-                      <p><strong>Phone:</strong> {task.customerData.phone || 'N/A'}</p>
-                      <p><strong>Loan Amount:</strong> {task.customerData.loanAmount || 'N/A'}</p>     
+                      <p>
+                        <strong>Customer:</strong>{" "}
+                        {`${task.customerData.firstName} ${task.customerData.lastName}` ||
+                          "N/A"}
+                      </p>
+                      <p>
+                        <strong>Email:</strong>{" "}
+                        {task.customerData.email || "N/A"}
+                      </p>
+                      <p>
+                        <strong>Phone:</strong>{" "}
+                        {task.customerData.phone || "N/A"}
+                      </p>
+                      <p>
+                        <strong>Loan Amount:</strong>{" "}
+                        {task.customerData.loanAmount || "N/A"}
+                      </p>
                     </div>
                   </div>
                   <div className="ml-4">
-                    <span className={`px-2 py-1 text-xs rounded ${
-                      task.status === 'SCHEDULED' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800'
-                    }`}>
+                    <span
+                      className={`px-2 py-1 text-xs rounded ${
+                        task.status === "SCHEDULED"
+                          ? "bg-yellow-100 text-yellow-800"
+                          : "bg-gray-100 text-gray-800"
+                      }`}
+                    >
                       {task.status}
                     </span>
                   </div>
@@ -353,7 +451,7 @@ function TaskQueueView({ taskQueue, onProcessNext, onRefresh }) {
               </div>
             ))}
           </div>
-          
+
           <button
             onClick={onProcessNext}
             className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors shadow-md"
@@ -453,7 +551,7 @@ function LoanApplication() {
     send({ type: "FORM_UPDATE", data });
     send({ type: "FORM_SUBMIT" });
   };
-  
+
   const handleProcessNext = () => send({ type: "PROCESS_NEXT" });
   const handleRefreshQueue = () => send({ type: "REFRESH_QUEUE" });
 
@@ -461,7 +559,9 @@ function LoanApplication() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8">
       <div className="max-w-4xl mx-auto px-4">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">Fincuro Bank</h1>
+          <h1 className="text-4xl font-bold text-gray-800 mb-2">
+            Fincuro Bank
+          </h1>
           <p className="text-xl text-gray-600">Loan Officer Application</p>
         </div>
 
@@ -471,7 +571,7 @@ function LoanApplication() {
             <p className="text-gray-600">Loading loan applications...</p>
           </div>
         )}
-        
+
         {state.matches("queueView") && (
           <TaskQueueView
             taskQueue={taskQueue}
