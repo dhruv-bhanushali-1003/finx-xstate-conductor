@@ -9,7 +9,7 @@ import { Form } from "react-formio";
 import "formiojs/dist/formio.full.css";
 import { Formio } from "formiojs";
 
-Formio.setBaseUrl("http://3.110.81.211");
+Formio.setBaseUrl("http://13.203.139.235");
 
 async function getKeycloakToken() {
   try {
