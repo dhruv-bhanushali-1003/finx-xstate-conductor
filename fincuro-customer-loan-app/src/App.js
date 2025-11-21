@@ -41,7 +41,7 @@ const ConductorService = {
     try {
       const token = await getKeycloakToken();
       const res = await axios.post(
-        `https://base-api.fincuro.in/gateway/ui-workflow/api/workflow`,
+        `https://base-api.ustfinx.com/gateway/ui-workflow/api/workflow`,
         { name: workflowName },
         {
           headers: {
@@ -61,7 +61,7 @@ const ConductorService = {
       console.log(uuid);
       const token = await getKeycloakToken();
       const res = await axios.get(
-        `https://base-api.fincuro.in/gateway/ui-workflow/api/application-data/${uuid}`,
+        `https://base-api.ustfinx.com/gateway/ui-workflow/api/application-data/${uuid}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -80,7 +80,7 @@ const ConductorService = {
     try {
       const token = await getKeycloakToken();
       const res = await axios.get(
-        `https://base-api.fincuro.in/gateway/ui-workflow/api/workflow/${workflowId}`,
+        `https://base-api.ustfinx.com/gateway/ui-workflow/api/workflow/${workflowId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -99,7 +99,7 @@ const ConductorService = {
       const token = await getKeycloakToken();
       console.log("Polling for task:", taskType);
       const res = await axios.get(
-        `https://base-api.fincuro.in/gateway/ui-workflow/api/tasks/poll/${taskType}`,
+        `https://base-api.ustfinx.com/gateway/ui-workflow/api/tasks/poll/${taskType}`,
         {
           params: { workerid: workerId },
           headers: {
@@ -120,7 +120,7 @@ const ConductorService = {
       const token = await getKeycloakToken();
       console.log("Completing task:", taskId, "with data:", outputData);
       const res = await axios.post(
-        `https://base-api.fincuro.in/gateway/ui-workflow/api/tasks`,
+        `https://base-api.ustfinx.com/gateway/ui-workflow/api/tasks`,
         {
           taskId,
           workflowInstanceId,

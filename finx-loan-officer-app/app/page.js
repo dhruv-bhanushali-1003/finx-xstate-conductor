@@ -38,7 +38,7 @@ const ConductorService = {
     try {
       const token = await getKeycloakToken();
       const res = await axios.post(
-        `https://base-api.fincuro.in/gateway/ui-workflow/api/workflow`,
+        `https://base-api.ustfinx.com/gateway/ui-workflow/api/workflow`,
         { name: workflowName },
         {
           headers: {
@@ -57,7 +57,7 @@ const ConductorService = {
     try {
       const token = await getKeycloakToken();
       const res = await axios.get(
-        `https://base-api.fincuro.in/gateway/ui-workflow/api/workflow/${workflowId}`,
+        `https://base-api.ustfinx.com/gateway/ui-workflow/api/workflow/${workflowId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -76,7 +76,7 @@ const ConductorService = {
       const token = await getKeycloakToken();
       console.log("Polling for task:", taskType);
       const res = await axios.get(
-        `https://base-api.fincuro.in/gateway/ui-workflow/api/tasks/poll/${taskType}?workerid=${workerId}`,
+        `https://base-api.ustfinx.com/gateway/ui-workflow/api/tasks/poll/${taskType}?workerid=${workerId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -96,7 +96,7 @@ const ConductorService = {
       const token = await getKeycloakToken();
       console.log("Completing task:", taskId, "with data:", outputData);
       const res = await axios.post(
-        `https://base-api.fincuro.in/gateway/ui-workflow/api/tasks`,
+        `https://base-api.ustfinx.com/gateway/ui-workflow/api/tasks`,
         {
           taskId,
           workflowInstanceId,
@@ -120,7 +120,7 @@ const ConductorService = {
     try {
       const token = await getKeycloakToken();
       const res = await axios.get(
-        `https://base-api.fincuro.in/gateway/ui-workflow/api/workflow/search?start=0&size=15&sort=startTime%3ADESC&freeText=%2A&workflowType=${encodeURIComponent(
+        `https://base-api.ustfinx.com/gateway/ui-workflow/api/workflow/search?start=0&size=15&sort=startTime%3ADESC&freeText=%2A&workflowType=${encodeURIComponent(
           workflowType
         )}`,
         {
