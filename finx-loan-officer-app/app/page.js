@@ -377,7 +377,7 @@ function TaskQueueView({ taskQueue, onProcessNext, onRefresh }) {
       <div className="flex justify-between items-center">
         <h2
           className="text-2xl font-semibold"
-          style={{ fontWeight: 600, fontSize: "24px", color: "#33297A" }}
+          style={{ fontWeight: 600, fontSize: "24px", color: "#0c8241ff" }}
         >
           New Loan Application
         </h2>
@@ -385,7 +385,7 @@ function TaskQueueView({ taskQueue, onProcessNext, onRefresh }) {
           onClick={onRefresh}
           className={`px-3 py-1 rounded-md border transition ${
             taskQueue.length > 0
-              ? "bg-white border-[#33297A] text-[#33297A] hover:bg-gray-50"
+              ? "bg-white border-[#0c8241ff] text-[#0c8241ff] hover:bg-gray-50"
               : "bg-gray-100 border-gray-300 text-gray-400"
           }`}
           style={{ fontWeight: 500, fontSize: "16px" }}
@@ -478,7 +478,7 @@ function TaskQueueView({ taskQueue, onProcessNext, onRefresh }) {
               <button
                 onClick={onProcessNext}
                 className="w-2/5 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors shadow-md"
-                style={{ backgroundColor: "#33297A" }}
+                style={{ backgroundColor: "#0c8241ff" }}
               >
                 Process Next Task
               </button>
@@ -498,7 +498,7 @@ function BankReviewInfoScreen({ currentTask, onSubmit }) {
 
   return (
     <div className="bg-white rounded-xl shadow p-6 border border-gray-100">
-      <h2 className="text-lg font-semibold mb-4" style={{ color: "#33297A" }}>
+      <h2 className="text-lg font-semibold mb-4" style={{ color: "#0c8241ff" }}>
         Bank Review - Application Information
       </h2>
 
@@ -515,7 +515,7 @@ function BankReviewInfoScreen({ currentTask, onSubmit }) {
         <button
           onClick={handleConfirm}
           className="flex-1 inline-flex items-center justify-center rounded-lg border bg-white font-medium py-2.5 px-4 transition-colors"
-          style={{ borderColor: "#33297A", color: "#33297A" }}
+          style={{ borderColor: "#0c8241ff", color: "#0c8241ff" }}
           onMouseEnter={(e) => (e.target.style.backgroundColor = "#f3f4f6")}
           onMouseLeave={(e) => (e.target.style.backgroundColor = "white")}
         >
@@ -524,9 +524,9 @@ function BankReviewInfoScreen({ currentTask, onSubmit }) {
         <button
           onClick={handleRequestMoreInfo}
           className="flex-1 inline-flex items-center justify-center rounded-lg text-white font-medium py-2.5 px-4 transition-colors"
-          style={{ backgroundColor: "#33297A" }}
+          style={{ backgroundColor: "#0c8241ff" }}
           onMouseEnter={(e) => (e.target.style.backgroundColor = "#2a1f5c")}
-          onMouseLeave={(e) => (e.target.style.backgroundColor = "#33297A")}
+          onMouseLeave={(e) => (e.target.style.backgroundColor = "#0c8241ff")}
         >
           Request Additional Information
         </button>
@@ -544,7 +544,7 @@ function BankApprovalScreen({ currentTask, onSubmit }) {
 
   return (
     <div className="bg-white rounded-xl shadow p-6 border border-gray-100">
-      <h2 className="text-lg font-semibold mb-4" style={{ color: "#33297A" }}>
+      <h2 className="text-lg font-semibold mb-4" style={{ color: "#0c8241ff" }}>
         Bank Review - Loan Approval Decision
       </h2>
 
@@ -562,8 +562,8 @@ function BankApprovalScreen({ currentTask, onSubmit }) {
           onClick={handleReject}
           className="flex-1 inline-flex items-center justify-center rounded-lg border font-medium py-2.5 px-4 transition-colors"
           style={{
-            borderColor: "#33297A",
-            color: "#33297A",
+            borderColor: "#0c8241ff",
+            color: "#0c8241ff",
             backgroundColor: "#fff",
           }}
           onMouseEnter={(e) =>
@@ -577,13 +577,13 @@ function BankApprovalScreen({ currentTask, onSubmit }) {
           onClick={handleApprove}
           className="flex-1 inline-flex items-center justify-center rounded-lg text-white font-medium py-2.5 px-4 transition-colors"
           style={{
-            backgroundColor: "#33297A",
+            backgroundColor: "#0c8241ff",
           }}
           onMouseEnter={(e) =>
             (e.currentTarget.style.backgroundColor = "#2a2268")
           }
           onMouseLeave={(e) =>
-            (e.currentTarget.style.backgroundColor = "#33297A")
+            (e.currentTarget.style.backgroundColor = "#0c8241ff")
           }
         >
           Approve Loan
@@ -599,7 +599,7 @@ function TopPanel() {
   return (
     <div
       className="text-white px-6 py-4 flex items-center justify-between"
-      style={{ backgroundColor: "#33297A" }}
+      style={{ backgroundColor: "#0c8241ff" }}
     >
       <div className="flex items-center space-x-4">
         <div className="flex items-center space-x-2">
@@ -691,14 +691,14 @@ function LeftSidebar({ currentTask, taskQueue, currentState }) {
             key={tab.id}
             className={`flex items-center w-full text-left px-3 py-2 text-sm font-medium transition-all rounded-md ${
               currentActiveTab === tab.id
-                ? "text-[#33297A] font-semibold"
+                ? "text-[#0c8241ff] font-semibold"
                 : "text-gray-400"
             }`}
           >
             {/* Left border indicator */}
             <div
               className={`w-1 h-6 mr-3 rounded-full ${
-                currentActiveTab === tab.id ? "bg-[#33297A]" : "bg-gray-200"
+                currentActiveTab === tab.id ? "bg-[#0c8241ff]" : "bg-gray-200"
               }`}
             ></div>
             <span>{tab.label}</span>
@@ -819,11 +819,11 @@ function LoanApplication() {
 
                   <h2
                     className="text-2xl font-bold mb-2"
-                    style={{ color: "#33297A" }}
+                    style={{ color: "#0c8241ff" }}
                   >
                     Task Completed Successfully!
                   </h2>
-                  <p className="mb-4" style={{ color: "#33297A" }}>
+                  <p className="mb-4" style={{ color: "#0c8241ff" }}>
                     Your review has been submitted.
                   </p>
                 </div>

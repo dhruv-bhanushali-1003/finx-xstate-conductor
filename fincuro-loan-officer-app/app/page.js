@@ -379,7 +379,7 @@ function TaskQueueView({ taskQueue, onProcessNext, onRefresh }) {
         </h2>
         <button
           onClick={onRefresh}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors"
         >
           Refresh
         </button>
@@ -407,7 +407,7 @@ function TaskQueueView({ taskQueue, onProcessNext, onRefresh }) {
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <div className="flex items-center space-x-2 mb-2">
-                      <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
+                      <span className="bg-green-100 text-blue-800 text-xs px-2 py-1 rounded">
                         #{index + 1}
                       </span>
                       <span className="font-medium text-gray-900">
