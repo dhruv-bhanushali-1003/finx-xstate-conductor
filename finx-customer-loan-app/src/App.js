@@ -28,7 +28,6 @@ async function getKeycloakToken() {
       }
     );
 
-    console.log("Token:", response.data.access_token);
     return response.data.access_token;
   } catch (err) {
     console.error("Error getting token:", err.response?.data || err.message);
@@ -49,7 +48,9 @@ const ConductorService = {
           },
         }
       );
-      return { workflowId: res.data };
+      const workflowId = res.data;
+      localStorage.setItem('loanAppWorkflowId', workflowId);
+      return { workflowId };
     } catch (err) {
       console.error("startWorkflow error:", err);
       throw err;
@@ -59,7 +60,6 @@ const ConductorService = {
   async getApplicationByUUID(uuid) {
     try {
       const token = await getKeycloakToken();
-      console.log(uuid);
       const res = await axios.get(
         `https://base-api.ustfinx.com/gateway/ui-workflow/api/application-data/${uuid}`,
         {
@@ -68,7 +68,6 @@ const ConductorService = {
           },
         }
       );
-      console.log(res.data);
       return res.data;
     } catch (err) {
       console.error("getApplicationByUUID error:", err);
@@ -155,7 +154,7 @@ export const loanMachine = setup({
       }
       const nextUiTask = workflow.tasks.find(
         (t) =>
-          t.status === "SCHEDULED" &&
+          (t.status === "SCHEDULED" || t.status === "IN_PROGRESS") &&
           t.inputData?.ui_component !== "BankReviewInfoScreen" &&
           t.inputData?.ui_component !== "BankApprovalScreen"
       );
@@ -163,13 +162,12 @@ export const loanMachine = setup({
         console.warn("No UI task found in workflow:", input.workflowId);
         return { status: workflow.status, task: null };
       }
-      const polled = await ConductorService.pollForTask(nextUiTask.taskDefName);
-      if (!polled?.inputData?.form_id) {
-        console.warn("Polled task is not UI:", polled?.taskDefName);
+      if (!nextUiTask?.inputData?.form_id) {
+        console.warn("Polled task is not UI:", nextUiTask?.taskType);
         return { status: workflow.status, task: null };
       }
-      console.log("Current UI task:", polled?.inputData?.ui_component);
-      return polled;
+      console.log("Current UI task:", nextUiTask?.inputData?.ui_component);
+      return nextUiTask;
     }),
 
     validate: fromPromise(({ input }) => {
@@ -217,14 +215,6 @@ export const loanMachine = setup({
         START: [
           {
             guard: ({ context }) => {
-              console.log(
-                "Guard check - context.workflowId:",
-                context.workflowId
-              );
-              console.log(
-                "Guard check - context.formData.workflowId:",
-                context.formData?.workflowId
-              );
               return context.workflowId;
             },
             target: "polling",
@@ -353,9 +343,11 @@ export const loanMachine = setup({
 
     completed: {
       type: "final",
+      entry: () => localStorage.removeItem('loanAppWorkflowId'),
     },
 
     error: {
+      entry: () => localStorage.removeItem('loanAppWorkflowId'),
       on: {
         RETRY: "polling",
       },
@@ -408,6 +400,15 @@ function FormRenderer({ onUpdate, onSubmit, formId }) {
     preloadUsernames();
   }, []);
 
+//   useEffect(() => {
+//   const saved = localStorage.getItem("loanAppFormData");
+//   console.log(formRef.current?.formio?.setSubmission, "Form ref on load");
+//   if (saved && formRef.current?.formio?.setSubmission) {
+//     console.log("Restoring saved form data from localStorage");
+//     formRef.current.formio.setSubmission({ data: JSON.parse(saved) });
+//   }
+// }, [formId]);
+
   const handleFormioSubmission = async (submission) => {
     try {
       console.log("Form submission received:", submission);
@@ -455,10 +456,8 @@ function FormRenderer({ onUpdate, onSubmit, formId }) {
         "Unknown submission error";
 
       setErrorMessage(message);
-      console.log(formRef.current, "Error form ref");
       // 🔥 Restore form data so fields don't reset
       if (formRef.current?.formio?.setSubmission) {
-        console.log(true);
         setTimeout(() => {
           formRef.current.formio.setSubmission({ data: submission.data });
         }, 0); // defer to next tick
@@ -478,10 +477,21 @@ function FormRenderer({ onUpdate, onSubmit, formId }) {
           template: "bootstrap3",
           submit: false,
         }}
+  //       onReady={(formio) => {
+  //   const saved = localStorage.getItem("loanAppFormData");
+  //   console.log("Form is ready:", formio, "Saved data:", saved);
+  //   if (saved) {
+  //     formio.setSubmission({ data: JSON.parse(saved) });
+  //   }
+  // }}
+  //       onChange={(submission) => {
+  //   localStorage.setItem("loanAppFormData", JSON.stringify(submission.data));
+  //   onUpdate(submission.data);
+  // }}
         onSubmit={(submission) => {
+          //localStorage.removeItem("loanAppFormData");
           onUpdate(submission.data);
           onSubmit(submission.data);
-          console.log("Form submission:", submission);
         }}
         onCustomEvent={(event) => {
           if (event.type === "validateAndSubmit") {
@@ -689,10 +699,15 @@ function LoanApplication() {
     loginAndGetToken().then(setToken);
     const urlParams = new URLSearchParams(window.location.search);
     const uuid = urlParams.get("uuid");
+    const savedWorkflowId = localStorage.getItem('loanAppWorkflowId');
 
     if (uuid) {
       console.log("Loading existing application with UUID:", uuid);
       loadExistingApplication(uuid);
+    } else if (savedWorkflowId) {
+      console.log("Restoring workflow from localStorage:", savedWorkflowId);
+      send({ type: "FORM_UPDATE", data: { workflowId: savedWorkflowId } });
+      send({ type: "START" });
     } else {
       send({ type: "START" });
     }
@@ -759,7 +774,6 @@ function LoanApplication() {
 
   const handleUpdate = (data) => send({ type: "FORM_UPDATE", data });
   const handleSubmit = (data) => {
-    console.log("termsAccepted", data);
     send({ type: "FORM_UPDATE", data });
     send({ type: "FORM_SUBMIT" });
   };
